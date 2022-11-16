@@ -1,5 +1,5 @@
 import argparse
-from astroquery.mast import Observations
+from astroquery.mast import Mast, Observations
 from astropy.table import unique, vstack
 import os
 import pandas as pd
@@ -56,6 +56,10 @@ def get_all_nirspec_data(cache_file=None):
 
 def get_proposal_data(proposal_id, instrument_name):
 	return Observations.query_criteria(obs_collection=['JWST'], proposal_id=proposal_id, instrument_name=instrument_name)
+
+
+def get_instrument_data(instrument_name):
+	return Observations.query_criteria(obs_collection=['JWST'], instrument_name=instrument_name)
 
 
 def get_data_products(prog_id, inst, calib_level, product_type):
