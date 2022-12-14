@@ -3,6 +3,7 @@ from astropy.io import fits
 import astropy.units as u
 import importlib
 import os
+import matplotlib.pyplot as plt
 import numpy as np
 import pathlib
 from shutil import copyfile
@@ -10,11 +11,14 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)) # for miri_consts
 
-BADASS_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.joinpath('badass')
-sys.path.insert(0, str(BADASS_DIR))
+BADASS_DIR = pathlib.Path('/projects/ssatyapa/spectra/sdoan2/jwst/badass/')
+# BADASS_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.joinpath('badass')
 
-import badass_repo.badass as badass
-import badass_repo.badass_tools.badass_ifu as ifu
+if BADASS_DIR.exists():
+    sys.path.insert(0, str(BADASS_DIR))
+    import badass_repo.badass as badass
+    import badass_repo.badass_tools.badass_ifu as ifu
+
 import miri_consts as consts
 
 OPTIONS_DIR = pathlib.Path(__file__).resolve().parent
@@ -95,9 +99,31 @@ def run_badass(spaxel_dir, options_name, output_name, test_line=None, fit_reg=No
         run_dirs.append(rd)
         rd.mkdir(exist_ok=True, parents=True)
         fits_files.append(spaxel.joinpath('%s.fits' % spaxel.name))
-
+    if not fits_files:
+        return
 
     badass.run_BADASS(fits_files, run_dir=run_dirs, options_file=options_file, nprocesses=4, test_line=test_line_d, fit_reg=fit_reg, sdss_spec=False, ifu_spec=True)
+
+
+def run_badass_extracted(fits_file, options_name, output_name, specres, z, test_line=None, fit_reg=None):
+    options_file = OPTIONS_DIR.joinpath(options_name)
+    if not options_file.exists():
+        raise Exception('Could not find options file: %s' % str(options_file))
+
+    run_dir = fits_file.parent.joinpath(fits_file.stem, output_name)
+    run_dir.mkdir(exist_ok=True, parents=True)
+
+    test_line_d = None
+    if test_line:
+        test_line_d = {'bool':True,'line':'na_'+test_line}
+
+    hdu = fits.open(fits_file)
+    wave = hdu[1].data['wave']
+    wave = (wave*u.um).to(u.AA).value
+    spec = hdu[1].data['spec']
+    err = hdu[1].data['err']
+
+    badass.run_BADASS(fits_file, run_dir=run_dir, options_file=options_file, test_line=test_line_d, fit_reg=fit_reg, sdss_spec=False, ifu_spec=False, wave=wave, spec=spec, err=err, fwhm_res=specres, z=z)
 
 
 def reconstruct_cube(cube_fits, out_label, line_test=False):
@@ -109,6 +135,49 @@ def plot_cube(cube_fits, out_label):
     ifu.plot_reconstructed_cube(cube_out_dir, animated=False)
 
 
+def plot_ratio(cube1, name1, cube2, name2, out_plot):
+    partable = cube1.joinpath('log', 'cube_par_table.fits')
+    if not partable.exists():
+        raise Exception('Unable to find par table: %s' % str(partable))
+    parhdu = fits.open(partable)
+    if not name1 in parhdu:
+        print('%s not found' % name1)
+        return
+
+    ox, oy = parhdu[0].header['ORIGINX'], parhdu[0].header['ORIGINY']
+    data1 = parhdu[name1].data
+    mask = data1 >= 0
+    data1[mask] = np.nan
+    data1 = 10**data1
+
+    partable = cube2.joinpath('log', 'cube_par_table.fits')
+    if not partable.exists():
+        raise Exception('Unable to find par table: %s' % str(partable))
+    parhdu = fits.open(partable)
+    if not name2 in parhdu:
+        print('%s not found' % name2)
+        return
+
+    data2 = parhdu[name2].data
+    mask = data2 >= 0
+    data2[mask] = np.nan
+    data2 = 10**data2
+
+    if data1.shape != data2.shape:
+        print('Skipping %s vs %s' % (name1, name2))
+        return
+
+    data = data1 / data2
+
+    fig, ax = plt.subplots()
+    map_ = ax.imshow(data, origin='lower', cmap='jet',
+              vmin=np.nanpercentile(data, 1),
+              vmax=np.nanpercentile(data, 99),
+              extent=[ox-.5, ox+data.shape[1]-.5, oy-.5, oy+data.shape[0]-.5])
+    plt.colorbar(map_, ax=ax, label=out_plot.stem)
+    ax.set_title(out_plot.stem)
+    plt.savefig(out_plot, bbox_inches='tight', dpi=300)
+    plt.close()
 
 
 

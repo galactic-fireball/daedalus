@@ -17,7 +17,10 @@ def main():
 	parser.add_argument('--config', help='Program/target config file', type=str, required=True)
 	parser.add_argument('--download', help='Download uncal or cube', type=str, default=None)
 	parser.add_argument('--pipeline', help='Run through pipeline', action='store_true', default=False)
+	parser.add_argument('--cube', help='Prepare cubes for BADASS', action='store_true', default=False)
 	parser.add_argument('--line', help='Line region for BADASS', type=str, default=None)
+	parser.add_argument('--extract', help='Extract 1D spectra or run BADASS if --line also supplied', action='store_true', default=False)
+	parser.add_argument('--ratio', help='Create ratio plots', action='store_true', default=False)
 	args = parser.parse_args()
 
 	config_file = pathlib.Path(args.config).resolve()
@@ -43,12 +46,24 @@ def main():
 	if args.pipeline:
 		program.run_pipeline()
 
-	if args.line:
+	if args.cube:
 		if not args.pipeline:
 			program.pipeline_out_dir = program.data_dir.joinpath('output', 'stage3', 'sci')
 		program.init_for_badass()
-		program.run_badass_line_region(args.line, BADASS_OPTIONS_FILE)
-		program.run_cube_reconstruct(args.line)
+
+	if args.line:
+		if not args.cube:
+			program.badass_dir = program.data_dir.joinpath('badass')
+		if args.extract:
+			program.run_badass_line_region_extracted(args.line, BADASS_OPTIONS_FILE)
+		else:
+			program.run_badass_line_region(args.line, BADASS_OPTIONS_FILE)
+			program.run_cube_reconstruct(args.line)
+	elif args.extract:
+		raise Exception('Extract 1D spectra not yet implemented!')
+
+	if args.ratio:
+		program.create_all_ratio_maps()
 
 
 if __name__ == '__main__':

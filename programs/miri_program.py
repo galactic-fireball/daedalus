@@ -27,6 +27,8 @@ class MiriProgram:
         self.data_dir.mkdir(exist_ok=True, parents=True)
         if not hasattr(self, 'mast_cube_prefix'):
             self.mast_cube_prefix = None
+        if not hasattr(self, 'badass_dir'):
+            self.badass_dir = self.data_dir.joinpath('badass')
 
 
     def download_uncal(self):
@@ -114,7 +116,7 @@ class MiriProgram:
 
         bkgd_output_dir = self.data_dir.joinpath('output', 'stage2', 'bkgd')
         bkgd_output_dir.mkdir(exist_ok=True, parents=True)
-        miri.run_stage2_all(input_dir, bkgd_output_dir, skip_cubes=False)
+        miri.run_stage2_all(bkgd_input_dir, bkgd_output_dir, skip_cubes=False)
 
         sci_input_dir = self.data_dir.joinpath('input', 'stage3', 'sci')
         # Move the stage 1 output to stage 2 input
@@ -144,14 +146,37 @@ class MiriProgram:
         self.badass_dir.mkdir(exist_ok=True, parents=True)
 
         cubes = list(self.pipeline_out_dir.glob('*-shortmediumlong_s3d.fits'))
-        if len(cubes) == 0:
-            print('WARNING: Found 0 prepared IFU cubes!')
-            return
-
         print('Found {n} cubes'.format(n=len(cubes)))
         for cube in cubes:
             cube.rename(self.badass_dir.joinpath(cube.name))
 
+        # grab the list this way since we might not have actually moved anything
+        cubes = self.badass_dir.glob('*_s3d.fits')
+        for cube in cubes:
+            spaxel_dir = cube.with_suffix('')
+            if not spaxel_dir.exists():
+                channel = int(re.findall(r'_ch\d+-shortmediumlong_s3d', cube.name)[0].split('-')[0][3:])
+                specres = badass_miri.get_channel_resolution(channel, 'short')
+                badass_miri.prepare_cube(cube, specres, z=self.redshift)
+
+
+    def run_badass_line_region_extracted(self, line_name, options_file):
+        self.badass_dir = self.data_dir.joinpath('badass')
+        extracted_dir = self.badass_dir.joinpath('extracted')
+        if not extracted_dir.exists():
+            raise Exception('Extracted directory not found')
+
+        line = badass_miri.get_line(line_name)
+
+        cube_prefix = self.mast_cube_prefix if (self.product_name == 'mast_direct') else self.product_name
+        spec_fits = extracted_dir.joinpath('%s_ch%d_extract.fits' % (cube_prefix, line.channel))
+        if not spec_fits.exists():
+            raise Exception('Could not find extracted spectrum file: %s' % str(spec_fits))
+
+        specres = badass_miri.get_channel_resolution(line.channel, line.subarray)
+
+        badass_miri.run_badass_extracted(spec_fits, options_file, '%s_region'%line_name, specres, self.redshift, fit_reg=(line.wave-8000,line.wave+8000))
+            
 
     def run_badass_line_region(self, line_name, options_file):
         if not hasattr(self, 'badass_dir') or not self.badass_dir.exists():
@@ -166,8 +191,7 @@ class MiriProgram:
 
         spaxel_dir = cube_fits.with_suffix('')
         if not spaxel_dir.exists():
-            specres = badass_miri.get_channel_resolution(line.channel, line.subarray)
-            badass_miri.prepare_cube(cube_fits, specres, z=self.redshift)
+            raise Exception('Spaxel directories not initialized (%s)' % (str(spaxel_dir)))
 
         badass_miri.run_badass(spaxel_dir, options_file, '%s_region'%line_name, fit_reg=(line.wave-2000,line.wave+2000))
 
@@ -183,5 +207,29 @@ class MiriProgram:
         badass_miri.reconstruct_cube(cube_fits, '%s_region'%line_name)
         badass_miri.plot_cube(cube_fits, '%s_region'%line_name)
 
+
+    def create_ratio_map(self, line1, line2):
+        cube_prefix = self.mast_cube_prefix if (self.product_name == 'mast_direct') else self.product_name
+        cube_fits1 = self.badass_dir.joinpath('%s_ch%d-shortmediumlong_s3d.fits' % (cube_prefix, line1.channel))
+        cube1 = self.badass_dir.joinpath(cube_fits1.stem, 'full_cube', '%s_region'%line1.name)
+        if not cube1.exists():
+            raise Exception('Could not find spaxel directory: %s' % str(cube1))
+
+        cube_fits2 = self.badass_dir.joinpath('%s_ch%d-shortmediumlong_s3d.fits' % (cube_prefix, line2.channel))
+        cube2 = self.badass_dir.joinpath(cube_fits2.stem, 'full_cube', '%s_region'%line2.name)
+        if not cube2.exists():
+            raise Exception('Could not find spaxel directory: %s' % str(cube2))
+
+        plot_dir = self.badass_dir.joinpath('ratio_plots')
+        plot_dir.mkdir(exist_ok=True, parents=True)
+        out_plot = plot_dir.joinpath('%s_vs_%s.pdf' % (line1.name, line2.name))
+
+        badass_miri.plot_ratio(cube1, 'NA_%s_FLUX'%line1.name.upper(), cube2, 'NA_%s_FLUX'%line2.name.upper(), out_plot)
+
+
+    def create_all_ratio_maps(self):
+        for i, line1 in enumerate(miri_consts.lines):
+            for line2 in miri_consts.lines[i+1:]:
+                self.create_ratio_map(line1, line2)
 
 

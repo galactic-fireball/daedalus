@@ -32,7 +32,7 @@ print('Using jwst pipeline version: %s' % jwst.__version__)
 
 
 RESIDUAL_FRINGE_CORRECT = False
-USE_MULTIPROCESS = False
+USE_MULTIPROCESS = True
 NPROCESSES = 4
 INCLUDE_BK = True
 
