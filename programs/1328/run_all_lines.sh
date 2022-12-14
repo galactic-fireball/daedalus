@@ -5,6 +5,8 @@ LINES="FeII_4 H200S8_5 FeII_5 FeVIII_5 MgVII_5 H200S7_5 MgV_5 H200S6_6 PAH62_6 N
 for LINE in $LINES
 do
         echo $LINE
-        sbatch --export=ALL,LINE=$LINE run.slurm
+#        sbatch --export=ALL,LINE=$LINE run_VV114.slurm
+#        sbatch --export=ALL,LINE=$LINE run_IIZw096.slurm
+        sbatch --export=ALL,LINE=$LINE run_NGC7469.slurm
 done
 

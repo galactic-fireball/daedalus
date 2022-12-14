@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#SBATCH --job-name=MIRI2732
+#SBATCH --job-name=NGC7319_RATIO
 
 #SBATCH --partition=all-LoPri,all-HiPri # ARGO
 ##SBATCH --partition=normal # HOPPER
@@ -18,5 +18,8 @@
 module load python/3.8.4 # ARGO
 source /home/sdoan2/python-ve/env/bin/activate
 
-#python ../run_program.py --program 2732 --download uncal
-python ../run_program.py --program 2732 --pipeline
+#python ../run_program.py --config ngc_7319_pipeline_1.8.2.toml --download uncal
+#python ../run_program.py --config ngc_7319_pipeline_1.8.2.toml --pipeline
+#python ../run_program.py --config ngc_7319_pipeline_1.8.2.toml --cube
+#python ../run_program.py --config ngc_7319_pipeline_1.8.2.toml --line $LINE
+python ../run_program.py --config ngc_7319_pipeline_1.8.2.toml --ratio
