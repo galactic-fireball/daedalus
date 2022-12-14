@@ -31,7 +31,6 @@ def get_full_jwst_table(cache_file=None):
 
 
 def get_all_service_data(service, cache_file=None):
-
 	if cache_file and cache_file.exists():
 		return pd.read_csv(cache_file)
 
@@ -54,8 +53,10 @@ def get_all_nirspec_data(cache_file=None):
 	return get_all_service_data('Mast.Jwst.Filtered.Nirspec', cache_file=cache_file)
 
 
-def get_proposal_data(proposal_id, instrument_name):
-	return Observations.query_criteria(obs_collection=['JWST'], proposal_id=proposal_id, instrument_name=instrument_name)
+def get_program_data(program_id, instrument_name):
+	obs_list = Observations.query_criteria(obs_collection=['JWST'], proposal_id=program_id, instrument_name=instrument_name)
+	all_products = [Observations.get_product_list(obs) for obs in obs_list]
+	return unique(vstack(all_products), keys='productFilename')
 
 
 def get_instrument_data(instrument_name):
@@ -63,10 +64,8 @@ def get_instrument_data(instrument_name):
 
 
 def get_data_products(prog_id, inst, calib_level, product_type):
-	obs_list = get_proposal_data(prog_id, inst)
-	all_products = [Observations.get_product_list(obs) for obs in obs_list]
-	file_names = unique(vstack(all_products), keys='productFilename')
-	return Observations.filter_products(file_names, calib_level=[calib_level], productSubGroupDescription=product_type)
+	prog_data = get_program_data(prog_id, inst)
+	return Observations.filter_products(prog_data, calib_level=[calib_level], productSubGroupDescription=product_type)
 
 
 def download_file(file_name, dest=None):
