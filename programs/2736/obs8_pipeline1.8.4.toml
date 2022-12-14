@@ -1,0 +1,13 @@
+program_id = 2736
+instrument = 'nirspec'
+
+redshift = 0.0
+mast_cube_prefix = 'jw02736-o008'
+
+# see https://www.stsci.edu/jwst/phase2-public/2736.pdf
+sci_obs = 8
+
+target_name = '06355'
+
+data_dir = '2736/data_sets/pipeline_1.8.4'
+product_name = '06355_pipeline_1.8.4'
