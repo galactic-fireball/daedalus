@@ -1,5 +1,6 @@
 import pandas as pd
 import pathlib
+import re
 import sys
 
 JWST_UTILS_DIR = pathlib.Path(__file__).resolve().parent.parent
@@ -9,6 +10,7 @@ import mast.mast as mast
 import pipeline.miri as miri
 import badass.badass_miri as badass_miri
 import badass.miri_consts as miri_consts
+import pipeline.crds_utils as crds_utils
 
 class MiriProgram:
 
@@ -46,7 +48,8 @@ class MiriProgram:
         sci_fmt = 'jw%05d%03d' % (self.program_id, self.sci_obs)
         sci_df = df[df.obs_id.str.contains(sci_fmt)]
 
-        dl_data_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
+        # dl_data_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
+        dl_data_dir = self.data_dir.joinpath('pipeline_data')
         dl_data_dir.mkdir(exist_ok=True, parents=True)
 
         for file_name in sci_df.productFilename.values:
@@ -56,8 +59,8 @@ class MiriProgram:
         bkgd_fmt = 'jw%05d%03d' % (self.program_id, self.bkgd_obs)
         bkgd_df = df[df.obs_id.str.contains(bkgd_fmt)]
 
-        dl_data_dir = self.data_dir.joinpath('input', 'stage1', 'bkgd')
-        dl_data_dir.mkdir(exist_ok=True, parents=True)
+        # dl_data_dir = self.data_dir.joinpath('input', 'stage1', 'bkgd')
+        # dl_data_dir.mkdir(exist_ok=True, parents=True)
 
         for file_name in bkgd_df.productFilename.values:
             mast.download_file(file_name, dest=dl_data_dir.joinpath(file_name))
@@ -84,6 +87,8 @@ class MiriProgram:
 
 
     def run_pipeline(self):
+        crds_utils.cache_crds('miri')
+
         # STAGE 1 SCI
         sci_input_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
         sci_output_dir = self.data_dir.joinpath('output', 'stage1', 'sci')
