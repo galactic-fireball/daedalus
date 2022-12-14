@@ -1,0 +1,11 @@
+program_id = 1328
+instrument = 'miri'
+
+redshift = 0.02 # Evans+22
+
+# For VV 114, see https://www.stsci.edu/jwst/phase2-public/1328.pdf
+sci_obs = 20
+bkgd_obs = 21
+
+data_dir = '1328/data_sets/pipeline_1.8.4/vv_114/'
+product_name = 'vv114_pipeline_1.8.4'

@@ -1,0 +1,11 @@
+program_id = 1328
+instrument = 'miri'
+
+redshift = 0.036 # Inami+22
+
+# For IIZw096, see https://www.stsci.edu/jwst/phase2-public/1328.pdf
+sci_obs = 33
+bkgd_obs = 34
+
+data_dir = '1328/data_sets/pipeline_1.8.4/IIZw096/'
+product_name = 'IIZw096_pipeline_1.8.4'

@@ -1,0 +1,10 @@
+program_id = 2732
+instrument = 'miri'
+redshift = 0.022823
+
+# For NGC 7319, see see https://www.stsci.edu/jwst/phase2-public/2732.pdf
+sci_obs = 4
+bkgd_obs = 5
+
+data_dir = '2732/data_sets/pipeline_1.8.2/ngc_7319/'
+product_name = 'ngc7319_pipeline_1.8.2'

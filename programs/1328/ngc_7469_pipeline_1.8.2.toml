@@ -1,0 +1,12 @@
+program_id = 1328
+instrument = 'miri'
+
+redshift = 0.01627
+mast_cube_prefix = 'jw01328-o015_t014_miri'
+
+# For NGC 7469, see https://www.stsci.edu/jwst/phase2-public/1328.pdf
+sci_obs = 15
+bkgd_obs = 16
+
+data_dir = '1328/data_sets/pipeline_1.8.2/ngc_7469/'
+product_name = 'ngc7469_pipeline_1.8.2'

@@ -1,0 +1,11 @@
+program_id = 1328
+instrument = 'miri'
+
+redshift = 0.009364 # simbad
+
+# For NGC 3256 nuc 1, see https://www.stsci.edu/jwst/phase2-public/1328.pdf
+sci_obs = 8
+bkgd_obs = 10
+
+data_dir = '1328/data_sets/pipeline_1.8.4/ngc_3256_nuc1/'
+product_name = 'ngc_3256_nuc1_pipeline_1.8.4'
