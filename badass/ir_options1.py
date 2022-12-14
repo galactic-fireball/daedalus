@@ -63,56 +63,54 @@ comp_options={
 ################################################################################
 user_lines = {
     # MIRI
-    # CH 1 SHORT
+    # CH 1
     'na_FeII_4': {'center':48890., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S8_5': {'center':50530., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeII_5': {'center':53400., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeVIII_5': {'center':54470., 'line_type':'user', 'line_profile':'gaussian'},
     'na_MgVII_5': {'center':55030., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S7_5': {'center':55110., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 1 MEDIUM
     'na_MgV_5': {'center':56100., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S6_6': {'center':61090., 'line_type':'user', 'line_profile':'gaussian'},
     'na_PAH62_6': {'center':62000., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 1 LONG
+    'na_ArIII_6': {'center':63670., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NiII_6': {'center':66360., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeII_6': {'center':67210., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S5_6': {'center':69090., 'line_type':'user', 'line_profile':'gaussian'},
     'na_ArII_6': {'center':69850., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NaIII_7': {'center':73180., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 2 SHORT
+    # CH 2
     'na_HI63_7': {'center':74600., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NeVI_7': {'center':76520., 'line_type':'user', 'line_profile':'gaussian'},
     'na_PAH77_7': {'center':77000., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeVII_7': {'center':78140., 'line_type':'user', 'line_profile':'gaussian'},
     'na_ArV_7': {'center':79020., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S4_8': {'center':80260., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 2 MEDIUM
     'na_ArIII_8': {'center':89910., 'line_type':'user', 'line_profile':'gaussian'},
     'na_MgVII_9': {'center':90090., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeVII_9': {'center':95270., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S3_9': {'center':96650., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 2 LONG
     'na_SIV_10': {'center':105100., 'line_type':'user', 'line_profile':'gaussian'},
     'na_PAH113_11': {'center':113000., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 3 SHORT
+    # CH 3
+    'na_ClIV_11': {'center':117630., 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SIII_12': {'center':120000., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S2_12': {'center':122800., 'line_type':'user', 'line_profile':'gaussian'},
     'na_HI76_12': {'center':123700., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NeII_12': {'center':128100., 'line_type':'user', 'line_profile':'gaussian'},
     'na_ArV_13': {'center':131000., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 3 MEDIUM
     'na_MgV_13': {'center':135200., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NeV_14': {'center':143200., 'line_type':'user', 'line_profile':'gaussian'},
     'na_ClII_14': {'center':143700., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NeIII_15': {'center':155600., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 3 LONG
     'na_H200S1_17': {'center':170300., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 4 SHORT
+    # CH 4
     'na_FeII_17': {'center':179400., 'line_type':'user', 'line_profile':'gaussian'},
     'na_SIII_18': {'center':187100., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeVI_19': {'center':195527., 'line_type':'user', 'line_profile':'gaussian'},
-    # CH 4 MEDIUM
-    # CH 4 LONG
+    'na_ClIV_20': {'center':203200., 'line_type':'user', 'line_profile':'gaussian'},
+    'na_ArIII_21': {'center':218250., 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIII_22': {'center':229250., 'line_type':'user', 'line_profile':'gaussian'},
     'na_NeV_24': {'center':243200., 'line_type':'user', 'line_profile':'gaussian'},
     'na_OIV_25': {'center':258900., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeII_25': {'center':259900., 'line_type':'user', 'line_profile':'gaussian'},

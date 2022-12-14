@@ -48,6 +48,7 @@ lines = [
     LineInfo('MgV_5', 56100., 1, 'medium'),
     LineInfo('H200S6_6', 61090., 1, 'medium'),
     LineInfo('PAH62_6', 62000., 1, 'medium'),
+    LineInfo('ArIII_6', 63670., 1, 'medium'),
     LineInfo('NiII_6', 66360., 1, 'long'),
     LineInfo('FeII_6', 67210., 1, 'long'),
     LineInfo('H200S5_6', 69090., 1, 'long'),
@@ -65,6 +66,8 @@ lines = [
     LineInfo('H200S3_9', 96650., 2, 'medium'),
     LineInfo('SIV_10', 105100., 2, 'long'),
     LineInfo('PAH113_11', 113000., 2, 'long'),
+    LineInfo('ClIV_11', 117630., 3, 'short'),
+    LineInfo('SIII_12', 120000., 3, 'short'),
     LineInfo('H200S2_12', 122800., 3, 'short'),
     LineInfo('HI76_12', 123700., 3, 'short'),
     LineInfo('NeII_12', 128100., 3, 'short'),
@@ -77,6 +80,9 @@ lines = [
     LineInfo('FeII_17', 179400., 4, 'short'),
     LineInfo('SIII_18', 187100., 4, 'short'),
     LineInfo('FeVI_19', 195527., 4, 'short'),
+    LineInfo('ClIV_20', 203200., 4, 'short'), # correct subarray?
+    LineInfo('ArIII_21', 218250., 4, 'short'), # correct subarray?
+    LineInfo('FeIII_22', 229250., 4, 'short'), # correct subarray?
     LineInfo('NeV_24', 243200., 4, 'long'),
     LineInfo('OIV_25', 258900., 4, 'long'),
     LineInfo('FeII_25', 259900., 4, 'long'),
