@@ -31,7 +31,7 @@ from jwst.residual_fringe import ResidualFringeStep
 print('Using jwst pipeline version: %s' % jwst.__version__)
 
 
-RESIDUAL_FRINGE_CORRECT = False
+RESIDUAL_FRINGE_CORRECT = True
 USE_MULTIPROCESS = True
 NPROCESSES = 4
 INCLUDE_BK = True
@@ -45,6 +45,7 @@ def run_stage1_single(ufile, output_dir):
 		detector1.output_dir = str(output_dir)
 		detector1.output_file = str(output_dir.joinpath(ufile.stem))
 		detector1.run(ufile)
+	return None
 
 
 def run_stage1_all(uncal_dir, output_dir):
@@ -64,30 +65,24 @@ def run_stage1_all(uncal_dir, output_dir):
 
 
 def run_stage2_single(rfile, output_dir, skip_cubes):
+	print('Processing: {}'.format(str(rfile)))
+	if output_dir.joinpath(rfile.name.replace('rate', 'cal')).exists():
+		return None
 
-	if not output_dir.joinpath(rfile.name.replace('rate', 'cal')).exists():
-		spec2 = Spec2Pipeline()
-		spec2.output_dir = str(output_dir)
+	spec2 = Spec2Pipeline()
+	spec2.output_dir = str(output_dir)
+	spec2.output_file = str(rfile.with_suffix(''))
 
-		print('Processing: {}'.format(str(rfile)))
-		spec2.output_file = str(rfile.with_suffix(''))
-
-		if (skip_cubes):
-			spec2.cube_build.skip = True
-			spec2.extract_1d.skip = True
-
-		spec2.run(rfile)
-		spec2.suffix = 'spec2'
+	if (skip_cubes):
+		spec2.cube_build.skip = True
+		spec2.extract_1d.skip = True
 
 	if RESIDUAL_FRINGE_CORRECT:
-		# TODO: if skip_cubes == False, does this need to be on the x1d files?
-		rfs_in = output_dir.joinpath(rfile.name.replace('rate', 'cal'))
-		if not output_dir.joinpath(rfs_in.name.replace('cal', 'residual_fringe')).exists():
-			print('Performing residual fringe correction on: {}'.format(str(rfs_in)))
-			rfringe_step = ResidualFringeStep()
-			rfringe_step.output_file = str(rfs_in.with_suffix(''))
-			rfringe_step.output_dir = str(output_dir)
-			rfringe_step.run(rfs_in)
+		spec2.residual_fringe.skip = False
+
+	spec2.run(rfile)
+	spec2.suffix = 'spec2'
+	return None
 
 
 def run_stage2_all(input_dir, output_dir, skip_cubes=False):
@@ -107,12 +102,7 @@ def run_stage2_all(input_dir, output_dir, skip_cubes=False):
 
 
 def run_stage3(sci_input, bk_input, product_name, output_dir):
-	if RESIDUAL_FRINGE_CORRECT:
-		sci_files = sci_input.glob('*_residual_fringe.fits')
-	else:
-		print(str(sci_input))
-		sci_files = sci_input.glob('*_cal.fits')
-	sci_files = [str(f) for f in sci_files]
+	sci_files = [str(f) for f in sci_input.glob('*_cal.fits')]
 	print(sci_files)
 
 	asn = asn_from_list.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=product_name)

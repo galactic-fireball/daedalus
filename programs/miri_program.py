@@ -49,7 +49,7 @@ class MiriProgram:
         sci_df = df[df.obs_id.str.contains(sci_fmt)]
 
         # dl_data_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
-        dl_data_dir = self.data_dir.joinpath('pipeline_data')
+        dl_data_dir = self.data_dir.joinpath('pipeline_data', 'sci')
         dl_data_dir.mkdir(exist_ok=True, parents=True)
 
         for file_name in sci_df.productFilename.values:
@@ -60,7 +60,8 @@ class MiriProgram:
         bkgd_df = df[df.obs_id.str.contains(bkgd_fmt)]
 
         # dl_data_dir = self.data_dir.joinpath('input', 'stage1', 'bkgd')
-        # dl_data_dir.mkdir(exist_ok=True, parents=True)
+        dl_data_dir = self.data_dir.joinpath('pipeline_data', 'bkgd')
+        dl_data_dir.mkdir(exist_ok=True, parents=True)
 
         for file_name in bkgd_df.productFilename.values:
             mast.download_file(file_name, dest=dl_data_dir.joinpath(file_name))
@@ -89,55 +90,16 @@ class MiriProgram:
     def run_pipeline(self):
         crds_utils.cache_crds('miri')
 
-        # STAGE 1 SCI
-        sci_input_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
-        sci_output_dir = self.data_dir.joinpath('output', 'stage1', 'sci')
-        sci_output_dir.mkdir(exist_ok=True, parents=True)
-        miri.run_stage1_all(sci_input_dir, sci_output_dir)
+        sci_dir = self.data_dir.joinpath('pipeline_data', 'sci')
+        bkgd_dir = self.data_dir.joinpath('pipeline_data', 'bkgd')
 
-        # STAGE 1 BKGD
-        bkgd_input_dir = self.data_dir.joinpath('input', 'stage1', 'bkgd')
-        bkgd_output_dir = self.data_dir.joinpath('output', 'stage1', 'bkgd')
-        bkgd_output_dir.mkdir(exist_ok=True, parents=True)
-        miri.run_stage1_all(bkgd_input_dir, bkgd_output_dir)
+        miri.run_stage1_all(sci_dir, sci_dir)
+        miri.run_stage1_all(bkgd_dir, bkgd_dir)
+        miri.run_stage2_all(sci_dir, sci_dir, skip_cubes=True)
+        miri.run_stage2_all(bkgd_dir, bkgd_dir, skip_cubes=False)
 
-        # STAGE 2 SCI
-        sci_input_dir = self.data_dir.joinpath('input', 'stage2', 'sci')
-        # Move the stage 1 output to stage 2 input
-        sci_input_dir.mkdir(exist_ok=True, parents=True)
-        for f in sci_output_dir.glob('*'):
-          f.rename(sci_input_dir.joinpath(f.name))
-
-        sci_output_dir = self.data_dir.joinpath('output', 'stage2', 'sci')
-        sci_output_dir.mkdir(exist_ok=True, parents=True)
-        miri.run_stage2_all(sci_input_dir, sci_output_dir, skip_cubes=True)
-
-        # STAGE 2 BKGD
-        bkgd_input_dir = self.data_dir.joinpath('input', 'stage2', 'bkgd')
-        # Move the stage 1 output to stage 2 input
-        bkgd_input_dir.mkdir(exist_ok=True, parents=True)
-        for f in bkgd_output_dir.glob('*'):
-          f.rename(bkgd_input_dir.joinpath(f.name))
-
-        bkgd_output_dir = self.data_dir.joinpath('output', 'stage2', 'bkgd')
-        bkgd_output_dir.mkdir(exist_ok=True, parents=True)
-        miri.run_stage2_all(bkgd_input_dir, bkgd_output_dir, skip_cubes=False)
-
-        sci_input_dir = self.data_dir.joinpath('input', 'stage3', 'sci')
-        # Move the stage 1 output to stage 2 input
-        sci_input_dir.mkdir(exist_ok=True, parents=True)
-        for f in sci_output_dir.glob('*'):
-          f.rename(sci_input_dir.joinpath(f.name))
-
-        bkgd_input_dir = self.data_dir.joinpath('input', 'stage3', 'bkgd')
-        # Move the stage 1 output to stage 2 input
-        bkgd_input_dir.mkdir(exist_ok=True, parents=True)
-        for f in bkgd_output_dir.glob('*'):
-          f.rename(bkgd_input_dir.joinpath(f.name))
-
-        output_dir = self.data_dir.joinpath('output', 'stage3', 'sci')
-        output_dir.mkdir(exist_ok=True, parents=True)
-        miri.run_stage3(sci_input_dir, bkgd_input_dir, self.product_name, output_dir)
+        output_dir = self.data_dir.joinpath('pipeline_data')
+        miri.run_stage3(sci_dir, bkgd_dir, self.product_name, output_dir)
 
         print('Pipeline for {pname} complete!'.format(pname=self.product_name))
         self.pipeline_out_dir = output_dir
@@ -180,8 +142,9 @@ class MiriProgram:
 
         specres = badass_miri.get_channel_resolution(line.channel, line.subarray)
 
-        badass_miri.run_badass_extracted(spec_fits, options_file, '%s_region'%line_name, specres, self.redshift, fit_reg=(line.wave-8000,line.wave+8000))
-            
+        # TODO: make wavelength range an option
+        badass_miri.run_badass_extracted(spec_fits, options_file, '%s_region'%line_name, specres, self.redshift, fit_reg=(line.wave-2000,line.wave+2000))
+
 
     def run_badass_line_region(self, line_name, options_file):
         if not hasattr(self, 'badass_dir') or not self.badass_dir.exists():

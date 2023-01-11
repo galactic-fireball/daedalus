@@ -24,7 +24,8 @@ supported_instruments = ['miri', 'nirspec']
 
 # Adapted from spacetelescope/jwst/jwst/datamodels/tests/test_schema_against_crds.py
 def cache_crds(instrument):
-    context = crds.get_context_name('jwst')
+    context = crds.get_default_context('jwst')
+    crds.api.dump_mappings(context)
     pmap = crds.get_cached_mapping(context)
     imap = pmap.get_imap(instrument)
 

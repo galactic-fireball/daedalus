@@ -118,12 +118,16 @@ def run_badass_extracted(fits_file, options_name, output_name, specres, z, test_
         test_line_d = {'bool':True,'line':'na_'+test_line}
 
     hdu = fits.open(fits_file)
+    # TODO: use hdu[1].header['WAVEUNIT']
     wave = hdu[1].data['wave']
     wave = (wave*u.um).to(u.AA).value
     spec = hdu[1].data['spec']
+    spec = spec*1.e-17
     err = hdu[1].data['err']
+    err = err*1.e-17
+    fwhm_res = wave / specres
 
-    badass.run_BADASS(fits_file, run_dir=run_dir, options_file=options_file, test_line=test_line_d, fit_reg=fit_reg, sdss_spec=False, ifu_spec=False, wave=wave, spec=spec, err=err, fwhm_res=specres, z=z)
+    badass.run_BADASS(fits_file, run_dir=run_dir, options_file=options_file, test_line=test_line_d, fit_reg=fit_reg, sdss_spec=False, ifu_spec=False, wave=wave, spec=spec, err=err, fwhm_res=fwhm_res, z=z)
 
 
 def reconstruct_cube(cube_fits, out_label, line_test=False):
