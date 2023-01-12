@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#SBATCH --job-name=NGC7469_RATIO
+#SBATCH --job-name=NGC_7469
 
 #SBATCH --partition=all-LoPri,all-HiPri # ARGO
 ##SBATCH --partition=normal # HOPPER
@@ -18,9 +18,4 @@
 module load python/3.8.4 # ARGO
 source /home/sdoan2/python-ve/env/bin/activate
 
-echo "$LINE"
-#python ../run_program.py --config ngc_7469_pipeline_1.8.2.toml --download all
-#python ../run_program.py --config ngc_7469_pipeline_1.8.2.toml --pipeline
-#python ../run_program.py --config ngc_7469_pipeline_1.8.2.toml --cube
-#python ../run_program.py --config ngc_7469_pipeline_1.8.2.toml --line $LINE
-python ../run_program.py --config ngc_7469_pipeline_1.8.2.toml --ratio
+python ../../run_target.py ngc_7469.toml

@@ -1,69 +1,69 @@
-import argparse
 import pathlib
 import sys
 import toml
 
-from miri_program import MiriProgram
-from nirspec_program import NirspecProgram
+JWST_UTILS_DIR = pathlib.Path(__file__).resolve().parent
+sys.path.insert(0, str(JWST_UTILS_DIR))
 
-CUR_DIR = pathlib.Path(__file__).resolve().parent
+from targets.target_common import Target
+from targets.miri_target import MiriTarget
+from targets.nirspec_target import NirspecTarget
 
 # See jwst-utils/badass for possible options files
 BADASS_OPTIONS_FILE = 'ir_options1.py'
 
 
-def main():
-	parser = argparse.ArgumentParser()
-	parser.add_argument('--config', help='Program/target config file', type=str, required=True)
-	parser.add_argument('--download', help='Download uncal or cube', type=str, default=None)
-	parser.add_argument('--pipeline', help='Run through pipeline', action='store_true', default=False)
-	parser.add_argument('--cube', help='Prepare cubes for BADASS', action='store_true', default=False)
-	parser.add_argument('--line', help='Line region for BADASS', type=str, default=None)
-	parser.add_argument('--extract', help='Extract 1D spectra or run BADASS if --line also supplied', action='store_true', default=False)
-	parser.add_argument('--ratio', help='Create ratio plots', action='store_true', default=False)
-	args = parser.parse_args()
+INSTRUMENTS = {
+	'miri': MiriTarget,
+	'nirspec': NirspecTarget,
+}
 
-	config_file = pathlib.Path(args.config).resolve()
+
+def main():
+	if len(sys.argv) < 2:
+		raise Exception('Config file expected')
+
+	config_file = pathlib.Path(sys.argv[1]).resolve()
 	if not config_file.exists():
 		raise Exception('Config file %s not found' % str(config_file))
 
 	config = toml.load(config_file)
+	Target.from_config(config, INSTRUMENTS).run()
 
-	if 'data_dir' in config:
-		config['data_dir'] = CUR_DIR.joinpath(config['data_dir'])
 
-	instrument = config['instrument']
-	if instrument == 'miri':
-		program = MiriProgram(config)
-	elif instrument == 'nirspec':
-		program = NirspecProgram(config)
-	else:
-		raise Exception('Unknown instrument: %s' % instrument)
 
-	if args.download:
-		getattr(program, program.download_funcs[args.download])()
 
-	if args.pipeline:
-		program.run_pipeline()
 
-	if args.cube:
-		if not args.pipeline:
-			program.pipeline_out_dir = program.data_dir.joinpath('output', 'stage3', 'sci')
-		program.init_for_badass()
 
-	if args.line:
-		if not args.cube:
-			program.badass_dir = program.data_dir.joinpath('badass')
-		if args.extract:
-			program.run_badass_line_region_extracted(args.line, BADASS_OPTIONS_FILE)
-		else:
-			program.run_badass_line_region(args.line, BADASS_OPTIONS_FILE)
-			program.run_cube_reconstruct(args.line)
-	elif args.extract:
-		raise Exception('Extract 1D spectra not yet implemented!')
 
-	if args.ratio:
-		program.create_all_ratio_maps()
+
+
+
+
+	# if args.download:
+	# 	getattr(program, program.download_funcs[args.download])()
+
+	# if args.pipeline:
+	# 	program.run_pipeline()
+
+	# if args.cube:
+	# 	if not args.pipeline:
+	# 		program.pipeline_out_dir = program.data_dir.joinpath('output', 'stage3', 'sci')
+	# 	program.init_for_badass()
+
+	# if args.line:
+	# 	if not args.cube:
+	# 		program.badass_dir = program.data_dir.joinpath('badass')
+	# 	if args.extract:
+	# 		program.run_badass_line_region_extracted(args.line, BADASS_OPTIONS_FILE)
+	# 	else:
+	# 		program.run_badass_line_region(args.line, BADASS_OPTIONS_FILE)
+	# 		program.run_cube_reconstruct(args.line)
+	# elif args.extract:
+	# 	raise Exception('Extract 1D spectra not yet implemented!')
+
+	# if args.ratio:
+	# 	program.create_all_ratio_maps()
 
 
 if __name__ == '__main__':

@@ -18,9 +18,5 @@
 module load python/3.8.4 # ARGO
 source /home/sdoan2/python-ve/env/bin/activate
 
-echo "$LINE"
-#python ../run_program.py --config VV114_pipeline_1.8.4.toml --download all
-#python ../run_program.py --config VV114_pipeline_1.8.4.toml --pipeline
-#python ../run_program.py --config VV114_pipeline_1.8.4.toml --cube
-#python ../run_program.py --config VV114_pipeline_1.8.4.toml --line $LINE
-python ../run_program.py --config VV114_pipeline_1.8.4.toml --ratio
+python ../../run_target.py VV114.toml
+
