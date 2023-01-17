@@ -102,10 +102,8 @@ def run_stage2_all(indir, output_dir):
 		return
 
 	args = [(asn_file, output_dir) for asn_file in asn_files]
-	# pool = mp.Pool(processes=NPROCESSES, maxtasksperchild=1)
-	# pool.starmap(run_stage2_single, args, chunksize=1)
-	pool = mp.Pool()
-	pool.starmap(run_stage2_single, args)
+	pool = mp.Pool(processes=NPROCESSES, maxtasksperchild=1)
+	pool.starmap(run_stage2_single, args, chunksize=1)
 	pool.close()
 	pool.join()
 

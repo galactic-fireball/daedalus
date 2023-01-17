@@ -3,15 +3,12 @@ import pandas as pd
 import pathlib
 import sys
 
-JWST_UTILS_DIR = pathlib.Path(__file__).resolve().parent.parent
-sys.path.insert(0, str(JWST_UTILS_DIR))
-
 import mast.mast as mast
 import pipeline.nirspec as nirspec
 # import badass.badass_nirspec as badass_nirspec
 import pipeline.crds_utils as crds_utils
 
-class NirspecProgram:
+class NIRSpec_MOS:
 
     download_funcs = {
         'all': 'download_all',

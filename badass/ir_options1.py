@@ -232,7 +232,7 @@ plot_options={
 "plot_flux_hist"     : False,# Plot MCMC hist. and chains for component fluxes
 "plot_lum_hist"      : False,# Plot MCMC hist. and chains for component luminosities
 "plot_eqwidth_hist"  : False, # Plot MCMC hist. and chains for equivalent widths 
-"plot_HTML"          : False,# make interactive plotly HTML best-fit plot
+"plot_HTML"          : True,# make interactive plotly HTML best-fit plot
 }
 ################################################################################
 

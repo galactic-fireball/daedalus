@@ -1,0 +1,27 @@
+target_name = 'F2M1106'
+
+program_id = 1335
+instrument = 'miri'
+
+redshift = 0.44
+
+# For F2M1106, see https://www.stsci.edu/jwst/phase2-public/1335.pdf
+sci_obs = 2
+bkgd_obs = 11
+
+# actions = ['download_uncal', 'run_pipeline']
+# actions = ['extract_1D',]
+actions = ['run_badass',]
+
+pipeline.multiprocess = true
+pipeline.nprocesses = 4
+pipeline.residual_fringe_correct = true
+pipeline.include_bkgd = true
+
+extract.aperture_name = 'aperture'
+extract.aperture_radius = 3.0 # arcsecs
+
+badass.target = '1D' # or 'cube'
+badass.line = 'NeV_14'
+badass.options_file = 'ir_options1.py'
+badass.wave_range = 6000

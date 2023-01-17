@@ -11,8 +11,13 @@ import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent)) # for miri_consts
 
-BADASS_DIR = pathlib.Path('/projects/ssatyapa/spectra/sdoan2/jwst/badass/')
-# BADASS_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.joinpath('badass')
+ARGO = False
+
+if ARGO:
+    BADASS_DIR = pathlib.Path('/projects/ssatyapa/spectra/sdoan2/jwst/badass/')
+    # BADASS_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.joinpath('badass')
+else:
+    BADASS_DIR = pathlib.Path('/Users/sara/Dropbox/research/bgc/pubs/props/jwst_cycle2')
 
 if BADASS_DIR.exists():
     sys.path.insert(0, str(BADASS_DIR))
