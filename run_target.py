@@ -7,6 +7,7 @@ sys.path.insert(0, str(JWST_UTILS_DIR))
 
 from instruments.instrument_common import Instrument
 from instruments.miri_ifu import MIRI_IFU
+from instruments.nirspec_ifu import NIRSpec_IFU
 from instruments.nirspec_mos import NIRSpec_MOS
 
 # See jwst-utils/badass for possible options files
@@ -15,7 +16,8 @@ BADASS_OPTIONS_FILE = 'ir_options1.py'
 
 INSTRUMENTS = {
 	'miri': MIRI_IFU,
-	'nirspec': NIRSpec_MOS,
+	'nirspec_ifu': NIRSpec_IFU,
+	'nirspec_mos': NIRSpec_MOS,
 }
 
 

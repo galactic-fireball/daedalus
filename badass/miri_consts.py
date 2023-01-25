@@ -39,6 +39,8 @@ class LineInfo:
         self.subarray = subarray
 
 lines = [
+    LineInfo('MgIV_4', 44871., 1, 'short'),
+    LineInfo('ArVI_4', 45280., 1, 'short'),
     LineInfo('FeII_4', 48890., 1, 'short'),
     LineInfo('H200S8_5', 50530., 1, 'short'),
     LineInfo('FeII_5', 53400., 1, 'short'),

@@ -1,0 +1,24 @@
+target_name = 'J1652'
+
+program_id = 1335
+instrument = 'nirspec_ifu'
+
+redshift = 2.942158 # SDSS
+
+# For J1652, see https://www.stsci.edu/jwst/phase2-public/1335.pdf
+obs = 8
+
+actions = ['download_all', 'run_pipeline']
+# actions = ['extract_1D',]
+# actions = ['run_badass',]
+
+pipeline.multiprocess = true
+pipeline.nprocesses = 4
+
+# extract.aperture_name = 'aperture'
+# extract.aperture_radius = 3.0 # arcsecs
+
+# badass.target = '1D' # or 'cube'
+# badass.line = 'ArVI_4'
+# badass.options_file = 'ir_options1.py'
+# badass.wave_range = 2000

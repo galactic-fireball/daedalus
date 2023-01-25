@@ -1,0 +1,20 @@
+target_name = 'NGC_3256'
+
+program_id = 1328
+instrument = 'nirspec_ifu'
+
+redshift = 0.009364
+
+# For NGC 3256, see https://www.stsci.edu/jwst/phase2-public/1328.pdf
+obs = 13 # nuc 1
+# obs = 14 # nuc 2
+
+# actions = ['download_all', 'run_pipeline']
+actions = ['extract_1D']
+
+pipeline.multiprocess = true
+pipeline.nprocesses = 4
+
+extract.aperture_name = 'aperture'
+extract.aperture_radius = 1.08 # arcsecs
+# extract.aperture_radius = 0.4 # arcsecs

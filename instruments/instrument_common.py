@@ -29,7 +29,10 @@ import crds
 import jwst
 from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
 
+from utils import plotly_plot
+
 JWST_VERSION_STR = 'pipeline_%s' % jwst.__version__
+# JWST_VERSION_STR = 'mast'
 
 PROGRAMS_DIR = pathlib.Path(__file__).parent.parent.joinpath('programs')
 
@@ -57,7 +60,6 @@ class Instrument(Prodict):
 
 
     def run(self):
-        print(self.__dict__)
         if not all(hasattr(self, action) for action in self.actions):
             raise Exception('Unknown action in: %s' % self.actions)
 
@@ -103,13 +105,15 @@ class Pipeline(Prodict):
 
 
 
-TARGET_FLUX_UNIT = 1e-17 * u.erg / u.s / (u.cm**2) / u.AA
+# TARGET_FLUX_UNIT = 1e-17 * u.erg / u.s / (u.cm**2) / u.AA
+TARGET_FLUX_UNIT = u.Unit('Jy')
 
 class Extractor:
-    def __init__(self, file, outfile, ap_r='psf', plot=True):
+    def __init__(self, file, outfile, ap_r='psf', plot=True, redshift=0.0):
         self.file = file
         self.outfile = outfile
         self.aperture_radius = ap_r
+        self.redshift = redshift
 
         if isinstance(self.aperture_radius, u.Quantity):
             self.aperture_radius.to(u.arcsec)
@@ -134,6 +138,10 @@ class Extractor:
         if not sources:
             raise Exception('Failed to find centroid source for: %s' % str(self.file))
         source = sources[np.argmax(sources['flux'])]
+
+        # TODO: configuration to set a different source?
+        # source = sources.to_pandas().sort_values(by=['flux']).iloc[-2]
+
         print(source['xcentroid','ycentroid','flux'])
         position = np.transpose((source['xcentroid'], source['ycentroid']))
         return position
@@ -198,8 +206,11 @@ class Extractor:
 
         if self.spec_figure:
             plt.figure(self.spec_figure)
+            plt.yscale('log')
             plt.plot(self.wave.value, spec, linewidth=0.5)
             plt.xlabel('Wavelength (%s)' % self.wave.unit.to_string())
             plt.ylabel('Flux (%s)' % TARGET_FLUX_UNIT.to_string())
             plt.savefig(self.outfile.parent.joinpath(self.outfile.stem+'_spec.png'), dpi=300)
+
+            plotly_plot.plot_fits(self.outfile, z=self.redshift)
 

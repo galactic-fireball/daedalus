@@ -19,7 +19,7 @@ fit_options={
 
 ########################### MCMC algorithm parameters ##########################
 mcmc_options={
-"mcmc_fit"    : False, # Perform robust fitting using emcee
+"mcmc_fit"    : True, # Perform robust fitting using emcee
 "nwalkers"    : 100,  # Number of emcee walkers; min = 2 x N_parameters
 "auto_stop"   : False, # Automatic stop using autocorrelation analysis
 "conv_type"   : "all", # "median", "mean", "all", or (tuple) of parameters
@@ -64,6 +64,8 @@ comp_options={
 user_lines = {
     # MIRI
     # CH 1
+    'na_MgIV_4': {'center':44871., 'line_type':'user', 'line_profile':'gaussian'},
+    'na_ArVI_4': {'center':45280., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeII_4': {'center':48890., 'line_type':'user', 'line_profile':'gaussian'},
     'na_H200S8_5': {'center':50530., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeII_5': {'center':53400., 'line_type':'user', 'line_profile':'gaussian'},

@@ -1,0 +1,15 @@
+target_name = 'NGC_3256_nuc2'
+
+program_id = 1328
+instrument = 'nirspec_ifu'
+
+redshift = 0.009364
+
+# For NGC 3256, see https://www.stsci.edu/jwst/phase2-public/1328.pdf
+#obs = 13 # nuc 1
+obs = 14 # nuc 2
+
+actions = ['download_all', 'run_pipeline']
+
+pipeline.multiprocess = true
+pipeline.nprocesses = 4
