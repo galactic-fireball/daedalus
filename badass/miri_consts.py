@@ -39,6 +39,8 @@ class LineInfo:
         self.subarray = subarray
 
 lines = [
+    LineInfo('SiVI_1', 19624.7, 1, 'short'),
+    LineInfo('AlIX_2', 20444.4, 1, 'short'),
     LineInfo('MgIV_4', 44871., 1, 'short'),
     LineInfo('ArVI_4', 45280., 1, 'short'),
     LineInfo('FeII_4', 48890., 1, 'short'),
@@ -58,6 +60,7 @@ lines = [
     LineInfo('NaIII_7', 73180., 1, 'long'),
     LineInfo('HI63_7', 74600., 2, 'short'),
     LineInfo('NeVI_7', 76520., 2, 'short'),
+    # LineInfo('NeVI_7', 76520., 4, 'short'),
     LineInfo('PAH77_7', 77000., 2, 'short'),
     LineInfo('FeVII_7', 78140., 2, 'short'),
     LineInfo('ArV_7', 79020., 2, 'short'),
