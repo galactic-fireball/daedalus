@@ -130,5 +130,7 @@ dmypy.json
 
 pipeline/crds_cache
 programs/*/data_sets/
+programs/*/test_data/
 programs/*/archive/
+instruments/data/webbpsf/webbpsf-data/
 **/.DS_Store
