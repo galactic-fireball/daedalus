@@ -1,7 +1,7 @@
 ################################## Fit Options #################################
 # Fitting Parameters
 fit_options={
-"fit_reg"    : (48000,280000), # Fitting region; Note: Indo-US Library=(3460,9464)
+"fit_reg"    : (14000,33000), # Fitting region; Note: Indo-US Library=(3460,9464)
 "good_thresh": 0.0, # percentage of "good" pixels required in fig_reg for fit.
 "mask_bad_pix": False, # mask pixels SDSS flagged as 'bad' (careful!)
 "mask_emline" : False, # automatically mask lines for continuum fitting.
@@ -19,7 +19,7 @@ fit_options={
 
 ########################### MCMC algorithm parameters ##########################
 mcmc_options={
-"mcmc_fit"    : True, # Perform robust fitting using emcee
+"mcmc_fit"    : False, # Perform robust fitting using emcee
 "nwalkers"    : 100,  # Number of emcee walkers; min = 2 x N_parameters
 "auto_stop"   : False, # Automatic stop using autocorrelation analysis
 "conv_type"   : "all", # "median", "mean", "all", or (tuple) of parameters
@@ -62,7 +62,104 @@ comp_options={
 # If not specified, defaults to SDSS-QSO Emission Lines (http://classic.sdss.org/dr6/algorithms/linestable.html)
 ################################################################################
 user_lines = {
+    'na_SiX_1': {'center':14300.800, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_1h': {'center':14768.800, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1d': {'center':15062.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1e': {'center':15070.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVI_1j': {'center':15138.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1f': {'center':15412.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1g': {'center':15432.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1h': {'center':15442.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_1i': {'center':16239.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1i': {'center':16623.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_1j': {'center':18184.800, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_PaA_1': {'center':18751.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'out_PaA_1': {'center':18751.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_1j': {'center':19074.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_1k': {'center':19172.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_1l': {'center':19210.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SiXI_1': {'center':19344.600, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_BrD_1': {'center':19445.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SiVI_1': {'center':19624.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_2': {'center':20315.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_2a': {'center':20395.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_AlIX_2': {'center':20444.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_2b': {'center':20466.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2': {'center':20882.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2a': {'center':21213.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_Br_G': {'center':21655.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2b': {'center':21871.600, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_CaVIII_2': {'center':23211.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SiVII_2': {'center':24807.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SiIX_2': {'center':25800.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVII_2': {'center':26287.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2c': {'center':27134.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2d': {'center':27156.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2e': {'center':27732.500, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2f': {'center':27756.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2g': {'center':28055.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2h': {'center':28308.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2i': {'center':28332.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2j': {'center':28356.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2k': {'center':28644.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_2c': {'center':28926.500, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2l': {'center':29010.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_AlV_2': {'center':29045.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2m': {'center':29082.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_2n': {'center':29728.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_3': {'center':30251.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_MgVIII': {'center':30279.500, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3': {'center':30335.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_3a': {'center':31507.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3a': {'center':31698.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_KVII_3': {'center':31896.600, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_CaIV_3': {'center':32061.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3b': {'center':32193.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_3c': {'center':33606.600, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVII_3': {'center':33836.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3c': {'center':33859.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3d': {'center':33910.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_3d': {'center':35163.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3e': {'center':35876.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3f': {'center':35887.800, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_AlVI_3': {'center':36593.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_AlVIII_3': {'center':36972.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SIX_3': {'center':37541.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_3g': {'center':38082.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_SiIX_3': {'center':39282.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_MgV_3': {'center':39656.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_DI_4': {'center':40197.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_BrA_4': {'center':40511.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVI_4': {'center':41431.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_CaV_4': {'center':41573.900, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVI_4a': {'center':44052.600, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_MgIV_4': {'center':44871.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_ArVI_4': {'center':45280.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_KIII_4': {'center':46168.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_NaVII_4': {'center':46825.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVI_4b': {'center':46882.800, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_4': {'center':47261.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeII_4': {'center':48890.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_4': {'center':48970.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_ArV_4': {'center':49277.800, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_H2S8_5': {'center':50530.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_H2O3': {'center':51794.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_5': {'center':52347.200, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeII_5': {'center':53388.100, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeIV_5': {'center':53960.600, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeVIII_5': {'center':54470.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_H2O9': {'center':54480.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_MgVII_5': {'center':55017.700, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_H2S7_5': {'center':55110.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_KVI_5': {'center':55732.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_MgV_5': {'center':56070.000, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_FeV_5a': {'center':57189.400, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_AlVIII_5': {'center':58293.300, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_KIV_5': {'center':59803.000, 'line_type':'user', 'line_profile':'gaussian'},
+
     # MIRI
+    'na_SiVI_1': {'center':19624.7, 'line_type':'user', 'line_profile':'gaussian'},
+    'na_AlIX_2': {'center':20444.4, 'line_type':'user', 'line_profile':'gaussian'},
     # CH 1
     'na_MgIV_4': {'center':44871., 'line_type':'user', 'line_profile':'gaussian'},
     'na_ArVI_4': {'center':45280., 'line_type':'user', 'line_profile':'gaussian'},
@@ -83,7 +180,8 @@ user_lines = {
     'na_NaIII_7': {'center':73180., 'line_type':'user', 'line_profile':'gaussian'},
     # CH 2
     'na_HI63_7': {'center':74600., 'line_type':'user', 'line_profile':'gaussian'},
-    'na_NeVI_7': {'center':76520., 'line_type':'user', 'line_profile':'gaussian'},
+    # 'na_NeVI_7': {'center':76520., 'line_type':'user', 'line_profile':'gaussian'},
+    'na_NeVI_7': {'center':76431.8, 'line_type':'user', 'line_profile':'gaussian'},
     'na_PAH77_7': {'center':77000., 'line_type':'user', 'line_profile':'gaussian'},
     'na_FeVII_7': {'center':78140., 'line_type':'user', 'line_profile':'gaussian'},
     'na_ArV_7': {'center':79020., 'line_type':'user', 'line_profile':'gaussian'},
