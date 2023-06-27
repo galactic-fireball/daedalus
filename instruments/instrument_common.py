@@ -5,6 +5,7 @@ import pathlib
 from prodict import Prodict
 
 from astropy.io import fits
+from astropy.stats import sigma_clip
 from astropy import units as u
 
 from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
@@ -51,12 +52,18 @@ class Instrument(Prodict):
 
 
     def init(self):
-        self.product_name = '%s_%s' % (self.target_name, JWST_VERSION_STR)
-        self.data_dir = PROGRAMS_DIR.joinpath(str(self.program_id), 'data_sets', self.target_name, self.instrument, JWST_VERSION_STR)
+        if not 'version' in self:
+            self.version = JWST_VERSION_STR
+
+        self.product_name = '%s_%s' % (self.target_name, self.version)
+        self.data_dir = PROGRAMS_DIR.joinpath(str(self.program_id), 'data_sets', self.target_name, self.instrument, self.version)
         self.pipeline_dir = self.data_dir.joinpath('pipeline')
         self.pipeline_dir.mkdir(parents=True, exist_ok=True)
+        self.pipeline_test_dir = self.pipeline_dir.joinpath('test_plots')
+        self.pipeline_test_dir.mkdir(parents=True, exist_ok=True)
         self.badass_dir = self.data_dir.joinpath('badass')
         self.badass_dir.mkdir(parents=True, exist_ok=True)
+        self.inst_data_dir = pathlib.Path(__file__).parent.joinpath('data')
 
 
     def run(self):
@@ -79,13 +86,21 @@ class Pipeline(Prodict):
 
     def run_stage1_single(self, ufile, output_dir):
         print('Processing: {}'.format(str(ufile)))
-        if output_dir.joinpath(ufile.name.replace('uncal', 'rate')).exists():
+        out_file = output_dir.joinpath(ufile.name.replace('uncal', 'rate'))
+        if out_file.exists():
             return None
 
         detector1 = Detector1Pipeline()
         detector1.output_dir = str(output_dir)
         detector1.output_file = str(output_dir.joinpath(ufile.stem))
         detector1.run(ufile)
+
+        # plt.figure()
+        # hdu = fits.open(out_file)
+        # plt.imshow(hdu['SCI'].data)
+        # plt.colorbar()
+        # plt.savefig(output_dir.joinpath('test_plots', out_file.stem + '.png'))
+
         return None
 
 
@@ -94,7 +109,7 @@ class Pipeline(Prodict):
 
         if not self.multiprocess:
             for ufile in uncal_files:
-                run_stage1_single(ufile, output_dir)
+                self.run_stage1_single(ufile, output_dir)
             return
 
         args = [(ufile, output_dir) for ufile in uncal_files]
@@ -106,7 +121,8 @@ class Pipeline(Prodict):
 
 
 # TARGET_FLUX_UNIT = 1e-17 * u.erg / u.s / (u.cm**2) / u.AA
-TARGET_FLUX_UNIT = u.Unit('Jy')
+TARGET_FLUX_UNIT = u.erg / u.s / (u.cm**2) / u.AA
+# TARGET_FLUX_UNIT = u.Unit('Jy')
 
 class Extractor:
     def __init__(self, file, outfile, ap_r='psf', plot=True, redshift=0.0):
@@ -151,7 +167,14 @@ class Extractor:
         source = self.find_source()
 
         spec = np.zeros(len(self.wave))*self.cube_spec.unit
+        bkgd = np.zeros(len(self.wave))*self.cube_spec.unit
         var = np.zeros(len(self.wave))*self.var.unit
+
+        # for i in range(self.cube_spec.shape[1]):
+        #     for j in range(self.cube_spec.shape[2]):
+        #         self.cube_spec[:,i,j] = sigma_clip(self.cube_spec[:,i,j].value)*self.cube_spec.unit
+
+        # self.cube_spec = sigma_clip(self.cube_spec.value, axis=0, sigma=5)*self.cube_spec.unit
 
         if self.aperture_radius != 'psf':
             radius = (self.aperture_radius / self.pix_size).value
@@ -175,16 +198,21 @@ class Extractor:
                     annulus_aperture.plot()
 
             ap_tot = ApertureStats(self.cube_spec[i,:,:], aperture).sum
-            bkgd = ApertureStats(self.cube_spec[i,:,:], annulus_aperture).mean * aperture.area
-            bkgd = bkgd if not np.isnan(bkgd) else 0.0
-            spec[i] = ap_tot - bkgd
+            bkgd[i] = ApertureStats(self.cube_spec[i,:,:], annulus_aperture).mean * aperture.area
+            # bkgd = ApertureStats(self.cube_spec[i,:,:], annulus_aperture).mean
+            bkgd[i] = bkgd[i] if not np.isnan(bkgd[i]) else 0.0
+            bkgd[i] = bkgd[i] if bkgd[i].value < 1e-6 else bkgd[i-1]
+            spec[i] = ap_tot# - bkgd[i]
 
             ap_var_tot = ApertureStats(self.var[i,:,:],aperture).sum
             bkgd_var_tot = ApertureStats(self.var[i,:,:], annulus_aperture).sum
             var[i] = ap_var_tot+(bkgd_var_tot*aperture.area/annulus_aperture.area)
 
         spec = spec.T.to(TARGET_FLUX_UNIT, equivalencies=u.spectral_density(self.wave)).T.value
+        bkgd = bkgd.T.to(TARGET_FLUX_UNIT, equivalencies=u.spectral_density(self.wave)).T.value
         err = np.sqrt(var).T.to(TARGET_FLUX_UNIT, equivalencies=u.spectral_density(self.wave)).T.value
+
+        spec = sigma_clip(spec, sigma=4)
 
         fits_data = fits.BinTableHDU.from_columns(fits.ColDefs([
             fits.Column(name='WAVE', array=self.wave, format='D'),
@@ -206,8 +234,11 @@ class Extractor:
 
         if self.spec_figure:
             plt.figure(self.spec_figure)
-            plt.yscale('log')
-            plt.plot(self.wave.value, spec, linewidth=0.5)
+            # plt.yscale('log')
+            nz_mask = np.where(spec > 1e-18)
+            plt.plot(self.wave.value[nz_mask], spec[nz_mask], linewidth=0.5, label='Data')
+            # plt.plot(self.wave.value, bkgd, linewidth=0.5, label='Background')
+            # plt.legend()
             plt.xlabel('Wavelength (%s)' % self.wave.unit.to_string())
             plt.ylabel('Flux (%s)' % TARGET_FLUX_UNIT.to_string())
             plt.savefig(self.outfile.parent.joinpath(self.outfile.stem+'_spec.png'), dpi=300)
