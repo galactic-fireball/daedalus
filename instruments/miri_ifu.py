@@ -105,7 +105,7 @@ class MIRI_IFU(Instrument):
 
 
     def get_cubes(self):
-        cubes = list(self.pipeline_dir.glob('*-shortmediumlong_s3d.fits'))
+        cubes = list(self.pipeline_dir.glob('*_s3d.fits'))
         print('Found {n} cubes'.format(n=len(cubes)))
         for cube in cubes:
             cube.rename(self.badass_dir.joinpath(cube.name))
@@ -173,6 +173,48 @@ class MIRI_IFU(Instrument):
         fit_reg = (line.wave-diff, line.wave+diff)
 
         badass_miri.run_badass_extracted(spec_fits, self.badass['options_file'], '%s_region'%self.badass['line'], specres, self.redshift, fit_reg=fit_reg)
+
+        # args = [(rfile, output_dir, skip_cubes) for rfile in rate_files]
+        # pool = mp.Pool(processes=self.nprocesses, maxtasksperchild=1)
+        # pool.starmap(self.run_stage2_single, args, chunksize=1)
+        # pool.close()
+        # pool.join()
+
+
+    def combine_results(self):
+        rows = {'line_name':[], 'flux':[]}
+        for rdir in self.badass_dir.glob('%s*_extracted/%s/*/*_region' % (self.product_name, self.extract['aperture_name'])):
+            line = rdir.name.split('_region')[0]
+            var_name = 'na_%s_FLUX'%line
+            par_table = rdir.joinpath('log', 'par_table.fits')
+
+            hdu = fits.open(par_table)
+            data = hdu[1].data
+            flux = data[np.where(data['parameter'] == var_name)[0][0]][1]
+            rows['line_name'].append(line)
+            rows['flux'].append(10**flux if flux != 0.0 else flux)
+
+        pd.DataFrame(rows).to_csv(self.badass_dir.joinpath('line_fluxes.csv'), index=False)
+
+
+    # def get_fluxes(self):
+    #     rows = {'line_name':[], 'flux':[]}
+
+    #     for ch in range(1, 5):
+    #         extract_dir = pathlib.Path('ngc7469_pipeline_1.9.2_ch%d_extract'%ch).resolve()
+    #         for rdir in extract_dir.glob('*_region'):
+    #             line = rdir.name.split('_region')[0]
+    #             var_name = 'na_%s_FLUX'%line
+    #             par_table = rdir.joinpath('log', 'par_table.fits')
+
+    #             hdu = fits.open(par_table)
+    #             data = hdu[1].data
+
+    #             flux = data[np.where(data['parameter'] == var_name)[0][0]][1]
+    #             rows['line_name'].append(line)
+    #             rows['flux'].append(10**flux if flux != 0.0 else flux)
+
+    #     pd.DataFrame(rows).to_csv('line_fluxes.csv', index=False)
 
 
     # def run_badass_line_region_extracted(self, line_name, options_file):
@@ -314,8 +356,8 @@ class MIRI_IFU_Pipeline(Pipeline):
 
 
 class MIRI_IFU_Extractor(Extractor):
-    def __init__(self, file, outfile, ap_r='psf'):
-        super().__init__(file, outfile, ap_r)
+    def __init__(self, file, outfile, ap_r='psf', plot=True, redshift=0.0):
+        super().__init__(file, outfile, ap_r=ap_r, plot=plot, redshift=redshift)
 
         self.scope_diam = 6.5 * u.m
 
