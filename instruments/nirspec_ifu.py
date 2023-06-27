@@ -199,9 +199,6 @@ class NIRSpec_IFU_Pipeline(Pipeline):
         if output_dir.joinpath(infile.name.replace('rate', 'cal')).exists():
             return None
 
-        if infile.name in ['jw01335004001_03104_00001_nrs1_rate.fits', 'jw01335004001_03104_00001_nrs2_rate.fits',]:
-            return None
-
         spec2 = Spec2Pipeline()
         spec2.output_dir = str(output_dir)
         spec2.output_file = str(infile.with_suffix(''))
@@ -240,7 +237,7 @@ class NIRSpec_IFU_Pipeline(Pipeline):
         spec3 = Spec3Pipeline.from_config_section(crds_config)
 
         spec3.outlier_detection.skip = True
-        spec3.extract_1d.center_xy = (29, 26)
+        # spec3.extract_1d.center_xy = (29, 26)
 
         spec3.output_dir = str(out_dir)
         spec3.save_results = True
