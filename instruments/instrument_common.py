@@ -17,13 +17,22 @@ import ssl
 # Needed to work around ssl certificate verification during crds downloads
 ssl._create_default_https_context = ssl._create_unverified_context
 
+ARGO = False
+if pathlib.Path('/projects/ssatyapa/').exists():
+    ARGO = True
+
+if ARGO:
+    CRDS_DIR = pathlib.Path('/projects/ssatyapa/spectra/jwst/crds_cache')
+else:
+    CRDS_DIR = pathlib.Path(__file__).resolve().parent.parent.joinpath('pipeline', 'crds_cache')
+
 USE_CRDS_OPS = True
 # Needs to be set before crds/jwst imports
 if USE_CRDS_OPS:
-    os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.parent.joinpath('pipeline', 'crds_cache', 'ops'))
+    os.environ['CRDS_PATH'] = str(CRDS_DIR.joinpath('ops'))
     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
 else:
-    os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.parent.joinpath('pipeline', 'crds_cache', 'pub'))
+    os.environ['CRDS_PATH'] = str(CRDS_DIR.joinpath('pub'))
     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
 
 import crds
@@ -37,6 +46,7 @@ JWST_VERSION_STR = 'pipeline_%s' % jwst.__version__
 
 PROGRAMS_DIR = pathlib.Path(__file__).parent.parent.joinpath('programs')
 
+# TODO: way to update a config from the command line
 class Instrument(Prodict):
     def from_config(config, instruments):
 

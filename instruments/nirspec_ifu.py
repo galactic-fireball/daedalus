@@ -23,7 +23,8 @@ STAGE2_ASN = True
 class NIRSpec_IFU(Instrument):
 
     def download_all(self):
-        mast.login(self.mast_token)
+        if 'mast_token' in self:
+            mast.login(self.mast_token)
         df = mast.get_program_data(str(self.program_id), 'NIRSPEC/IFU')
 
         # uncal
@@ -69,8 +70,8 @@ class NIRSpec_IFU(Instrument):
         pipeline_config = getattr(self, 'pipeline', {})
         pipeline = NIRSpec_IFU_Pipeline(pipeline_config)
 
-        # pipeline.run_stage1_all(self.pipeline_dir, self.pipeline_dir)
-        # pipeline.run_stage2_all(self.pipeline_dir, self.pipeline_dir)
+        pipeline.run_stage1_all(self.pipeline_dir, self.pipeline_dir)
+        pipeline.run_stage2_all(self.pipeline_dir, self.pipeline_dir)
         pipeline.run_stage3_all(self.pipeline_dir, self.pipeline_dir)
         print('Pipeline for {pname} complete!'.format(pname=self.product_name))
 
