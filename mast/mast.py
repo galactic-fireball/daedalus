@@ -6,6 +6,22 @@ import pandas as pd
 import pathlib
 import sys
 
+INSTRUMENTS = {'miri': 'MIRI', 'miri_ifu':'MIRI/IFU', 'nirspec': 'NIRSPEC', 'nirspec_ifu': 'NIRSPEC/IFU'}
+PRODUCTS = {'asn': 'ASN', 'cal': 'CAL', 'uncal': 'UNCAL'}
+
+# ['intentType', 'obs_collection', 'provenance_name', 'instrument_name', 'project',
+# 'filters', 'wavelength_region', 'target_name', 'target_classification', 'obs_id', 's_ra', 's_dec',
+# 'dataproduct_type', 'proposal_pi', 'calib_level', 't_min', 't_max', 't_exptime', 'em_min', 'em_max',
+# 'obs_title', 't_obs_release', 'proposal_id', 'proposal_type', 'sequence_number', 's_region', 'jpegURL',
+# 'dataURL', 'dataRights', 'mtFlag', 'srcDen', 'obsid', 'objID']
+
+# array(['MIRI/IMAGE', 'NIRISS/WFSS', 'NIRCAM/IMAGE', 'NIRSPEC/MSA',
+#        'NIRCAM/GRISM', 'MIRI/IFU', 'MIRI/SLIT', 'NIRSPEC', 'NIRCAM/CORON',
+#        'NIRISS/IMAGE', 'NIRSPEC/IFU', 'MIRI/TARGACQ', 'NIRSPEC/SLIT',
+#        'FGS/FGS2', 'NIRISS/AMI', 'MIRI/CORON', 'FGS/FGS1', 'NIRISS/SOSS',
+#        'MIRI/SLITLESS', 'NIRISS', 'MIRI', 'NIRCAM', 'NIRCAM/TARGACQ',
+#        'NIRSPEC/IMAGE', 'FGS'], dtype=object)
+
 logged_in = False
 def login(mast_api_token=None):
 	global logged_in
@@ -53,10 +69,23 @@ def get_all_nirspec_data(cache_file=None):
 	return get_all_service_data('Mast.Jwst.Filtered.Nirspec', cache_file=cache_file)
 
 
+def get_jwst_data(args, expand=False, filt=None):
+	args['obs_collection'] = ['JWST']
+	obs_list = Observations.query_criteria(**args)
+	if expand:
+		obs_list = [Observations.get_product_list(obs) for obs in obs_list]
+		obs_list = unique(vstack(obs_list), keys='productFilename')
+
+	if filt:
+		obs_list = Observations.filter_products(obs_list, **filt)
+
+	return obs_list
+
 def get_program_data(program_id, instrument_name):
-	obs_list = Observations.query_criteria(obs_collection=['JWST'], proposal_id=program_id, instrument_name=instrument_name)
-	all_products = [Observations.get_product_list(obs) for obs in obs_list]
-	return unique(vstack(all_products), keys='productFilename')
+	return get_jwst_data({'proposal_id':program_id, 'instrument_name':instrument_name}, expand=True)
+	# obs_list = Observations.query_criteria(obs_collection=['JWST'], proposal_id=program_id, instrument_name=instrument_name)
+	# all_products = [Observations.get_product_list(obs) for obs in obs_list]
+	# return unique(vstack(all_products), keys='productFilename')
 
 
 def get_instrument_data(instrument_name):
@@ -81,10 +110,39 @@ def download_file(file_name, dest=None):
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--download', help='file to download', type=str, default=None)
+	parser.add_argument('--query', help='query JWST', action='store_true', default=False)
+	parser.add_argument('--all', help='expand JWST query to all observations', action='store_true', default=False)
+	parser.add_argument('--instrument', help='intrument to query', choices=INSTRUMENTS.keys(), default=None)
+	parser.add_argument('--level', help='calibration level', type=int, choices=[1,2,3], default=None)
+	parser.add_argument('--program', help='program id', type=str, default=None)
+	parser.add_argument('--product', help='product type', choices=PRODUCTS.keys(), default=None)
+	parser.add_argument('--public', help='get publicly available only', action='store_true', default=False)
+	parser.add_argument('--out', help='output file', type=str, default=None)
 	args = parser.parse_args()
 
 	if args.download:
 		download_file(args.download)
+		return
+
+	if args.query:
+		query = {}
+		if args.instrument:
+			query['instrument_name'] = INSTRUMENTS[args.instrument]
+		if args.program:
+			query['proposal_id'] = args.program
+
+		filt = {}
+		if args.level:
+			filt['calib_level'] = [args.level]
+		if args.product:
+			filt['productSubGroupDescription'] = PRODUCTS[args.product]
+		if args.public:
+			filt['dataRights'] = 'PUBLIC'
+
+		obs_list = get_jwst_data(query, expand=args.all, filt=filt)
+		if args.out:
+			outfile = pathlib.Path(args.out).resolve()
+			obs_list.to_pandas().to_csv(outfile, index=False)
 		return
 
 

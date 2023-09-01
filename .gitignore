@@ -134,3 +134,12 @@ programs/*/test_data/
 programs/*/archive/
 instruments/data/webbpsf/webbpsf-data/
 **/.DS_Store
+utils/plotly_plot.py
+
+programs/1328/NGC_7469_nirspec_ifu.toml
+
+programs/1335/XID2028_nirspec_ifu.toml
+
+programs/1983/J1601.toml
+programs/1983/analysis/*
+programs/1983/process_test.py

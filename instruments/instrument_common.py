@@ -12,12 +12,13 @@ from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
 from photutils.detection import DAOStarFinder
 
 import numpy as np
+# import nsclean as nc
 
 import ssl
 # Needed to work around ssl certificate verification during crds downloads
 ssl._create_default_https_context = ssl._create_unverified_context
 
-ARGO = False
+ARGO = False # TODO: add to generic toml
 if pathlib.Path('/projects/ssatyapa/').exists():
     ARGO = True
 
@@ -41,10 +42,12 @@ from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
 
 from utils import plotly_plot
 
+# TODO: add to generic toml
 JWST_VERSION_STR = 'pipeline_%s' % jwst.__version__
 # JWST_VERSION_STR = 'mast'
 
 PROGRAMS_DIR = pathlib.Path(__file__).parent.parent.joinpath('programs')
+INSTRUMENTS_DIR = pathlib.Path(__file__).parent.parent.joinpath('instruments')
 
 # TODO: way to update a config from the command line
 class Instrument(Prodict):
@@ -84,6 +87,7 @@ class Instrument(Prodict):
             getattr(self, action)()
 
 
+CLEAN_RATES = True # TODO: add to toml config
 class Pipeline(Prodict):
     def init(self):
         for attr in []:
@@ -94,16 +98,47 @@ class Pipeline(Prodict):
         self.nprocesses = getattr(self, 'nprocesses', 4)
 
 
+    def clean_rate(self, rate_file):
+        print('Cleaning rate file: %s' % str(rate_file))
+        detector = rate_file.name.split('_')[-2]
+        mask_file = INSTRUMENTS_DIR.joinpath('data', 'nsclean', '%s_ifu_mask_thorough.fits'%detector) # TODO: fix
+        if not mask_file.exists():
+            raise Exception('Could not find mask file: %s' % str(mask_file))
+
+        hdu = fits.open(mask_file)
+        mask_data = np.array(hdu[0].data, dtype=np.bool_)
+        hdu.close()
+
+        cleaner = nc.NSClean(detector.upper(), mask_data)
+
+        hdu = fits.open(rate_file)
+        rate_file.rename(rate_file.with_suffix(rate_file.suffix+'.orig'))
+
+        hdr = hdu[0].header
+
+        rate_data = np.float32(hdu[1].data)
+        clean_data = cleaner.clean(rate_data, buff=False)
+        hdu[1].data = clean_data
+
+        hdu.writeto(rate_file, overwrite=True)
+        hdu.close()
+
+
     def run_stage1_single(self, ufile, output_dir):
         print('Processing: {}'.format(str(ufile)))
         out_file = output_dir.joinpath(ufile.name.replace('uncal', 'rate'))
         if out_file.exists():
+            if CLEAN_RATES:
+                self.clean_rate(out_file)
             return None
 
         detector1 = Detector1Pipeline()
         detector1.output_dir = str(output_dir)
         detector1.output_file = str(output_dir.joinpath(ufile.stem))
         detector1.run(ufile)
+
+        if CLEAN_RATES:
+            self.clean_rate(out_file)
 
         # plt.figure()
         # hdu = fits.open(out_file)

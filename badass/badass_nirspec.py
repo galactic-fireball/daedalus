@@ -4,9 +4,10 @@ import pathlib
 import numpy as np
 import sys
 
-ARGO = True
+ARGO = True # TODO: make generic toml option
 
 if ARGO:
+    # TODO: make generic toml option
     BADASS_DIR = pathlib.Path('/projects/ssatyapa/spectra/sdoan2/jwst/badass/')
     # BADASS_DIR = pathlib.Path(__file__).resolve().parent.parent.parent.joinpath('badass')
 else:
@@ -19,8 +20,9 @@ if BADASS_DIR.exists():
 
 OPTIONS_DIR = pathlib.Path(__file__).resolve().parent.joinpath('options')
 
-TRANSPOSE_FLUX = True
+TRANSPOSE_FLUX = True # TODO: make generic toml option
 
+# TODO: make generic toml option
 # TARGET_FLUX_UNIT = u.erg / u.s / (u.cm**2) / u.um
 TARGET_FLUX_UNIT = 1e-17 * u.erg / u.s / (u.cm**2) / u.AA
 TARGET_WAVE_UNIT = u.AA
@@ -45,16 +47,17 @@ def prepare_cube(cube_fits, specres, z=0.0, plot=False):
     wave = wave0 + np.arange(nwave)*header[CDELT]
     wave *= u.Unit(cunit)
 
-    # pxar = header['PIXAR_SR'] * u.sr
-    # tf = (hdu['SCI'].data.T * u.Unit(bunit)) * pxar
-    tf = (hdu['SCI'].data.T * u.Unit(bunit))
+    # TODO: check bunit
+    pxar = header['PIXAR_SR'] * u.sr
+    tf = (hdu['SCI'].data.T * u.Unit(bunit)) * pxar
+    # tf = (hdu['SCI'].data.T * u.Unit(bunit))
     spec = tf.to(TARGET_FLUX_UNIT, equivalencies=u.spectral_density(wave)).value
     spec[np.isnan(spec)] = 0.0
     spec[spec < 0.0] = 0.0
     if TRANSPOSE_FLUX: spec = spec.T
 
     err = u.Quantity(hdu['ERR'].data.T, unit=u.Unit(hdu['ERR'].header['BUNIT']))
-    # err *= pxar
+    err *= pxar # TODO: check bunit
     err = err.to(TARGET_FLUX_UNIT, equivalencies=u.spectral_density(wave)).value
     if TRANSPOSE_FLUX: err = err.T
     ivar = 1/(err**2)
@@ -94,7 +97,7 @@ def run_badass_spaxel(spaxel_dir, options_name):
     fits_file = list(spaxel_dir.glob('*.fits'))[0]
     print('Running spaxel fits: %s' % str(fits_file))
 
-    run_dir = spaxel_dir.joinpath('region_5')
+    run_dir = spaxel_dir.joinpath('spax_test') # TODO: fix
     options_file = OPTIONS_DIR.joinpath(options_name)
     badass.run_BADASS(fits_file, run_dir=run_dir, options_file=options_file, nprocesses=None, sdss_spec=False, ifu_spec=True)
 

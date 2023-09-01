@@ -39,7 +39,7 @@ class MIRI_IFU(Instrument):
         if cached_file.exists():
             df = pd.read_csv(cached_file)
         else:
-            df = mast.get_data_products(str(self.program_id), 'MIRI', 1, 'UNCAL').to_pandas()
+            df = mast.get_data_products(str(self.program_id), 'MIRI/IFU', 1, 'UNCAL').to_pandas()
             df.to_csv(cached_file, index=False)
 
         # Get only IFU data
@@ -324,7 +324,7 @@ class MIRI_IFU_Pipeline(Pipeline):
 
         if not self.multiprocess:
             for rfile in rate_files:
-                run_stage2_single(rfile, output_dir, skip_cubes)
+                self.run_stage2_single(rfile, output_dir, skip_cubes)
             return
 
         args = [(rfile, output_dir, skip_cubes) for rfile in rate_files]

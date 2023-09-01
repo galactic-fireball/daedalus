@@ -17,7 +17,7 @@ from jwst.pipeline.calwebb_spec2 import Spec2Pipeline
 from jwst.pipeline.calwebb_spec3 import Spec3Pipeline
 
 
-STAGE2_ASN = True
+STAGE2_ASN = True # TODO: look for spec2 asn
 
 
 class NIRSpec_IFU(Instrument):
@@ -126,16 +126,18 @@ class NIRSpec_IFU(Instrument):
     def run_badass_cube(self):
         cubes = self.get_cubes()
         output_name = 'cube_run1'
-        for cube in cubes:
+        # TODO: specify which cube in config instead of running all
+        for cube in cubes[:1]:
             print('Preparing cube: %s' % str(cube))
 
             specres = self.get_spec_res(cube)
             badass_nirspec.prepare_cube(cube, specres, z=self.redshift, plot=True)
             spaxel_dir = cube.with_suffix('')
-            badass_nirspec.run_badass(spaxel_dir, self.badass['options_file'], output_name)
-            badass_nirspec.run_cube_build(cube, output_name)
-            # badass_nirspec.run_badass_spaxel(spaxel_dir.joinpath('spaxel_21_23'), self.badass['options_file'])
-            # 'spaxel_21_23/spaxel_21_23.fits'
+            # badass_nirspec.run_badass(spaxel_dir, self.badass['options_file'], output_name)
+            # badass_nirspec.run_cube_build(cube, output_name)
+
+            # TODO: fix
+            badass_nirspec.run_badass_spaxel(spaxel_dir.joinpath('spaxel_28_28'), self.badass['options_file'])
             # badass_nirspec.run_badass(spaxel_dir, self.badass['options_file'], output_name, test_line=None, fit_reg=None)
 
 
@@ -183,7 +185,8 @@ class NIRSpec_IFU_Pipeline(Pipeline):
             #     for key, value in params.items():
             #         setattr(spec2, step)
 
-            spec2.cube_build.weighting = 'emsm'
+            # TODO: add to toml config
+            # spec2.cube_build.weighting = 'emsm'
 
             result = spec2(str(asn_file))
             print('spec2 result: %s' % result)
@@ -237,8 +240,14 @@ class NIRSpec_IFU_Pipeline(Pipeline):
         crds_config = Spec3Pipeline.get_config_from_reference(str(asn_file))
         spec3 = Spec3Pipeline.from_config_section(crds_config)
 
-        spec3.outlier_detection.skip = True
+        # TODO: add all these options to toml config
+        # spec3.outlier_detection.skip = True
         # spec3.extract_1d.center_xy = (29, 26)
+        # spec3.outlier_detection.threshold_percent = 
+
+        spec3.cube_build.scale1 = 0.05 # arcsecs
+        # probably don't need this too, but just in case
+        spec3.cube_build.scale2 = 0.05 # arcsecs
 
         spec3.output_dir = str(out_dir)
         spec3.save_results = True
