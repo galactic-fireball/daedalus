@@ -128,6 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+
+sync.sh
 pipeline/crds_cache
 programs/*/data_sets/
 programs/*/test_data/
@@ -136,10 +138,17 @@ instruments/data/webbpsf/webbpsf-data/
 **/.DS_Store
 utils/plotly_plot.py
 
-programs/1328/NGC_7469_nirspec_ifu.toml
+pipeline/nirspec.py
+pipeline/spec_common.py
+pipeline/docs
 
-programs/1335/XID2028_nirspec_ifu.toml
+programs/high_z.csv
+programs/programs.csv
 
-programs/1983/J1601.toml
+programs/1328/run_all_lines.sh
+
 programs/1983/analysis/*
 programs/1983/process_test.py
+programs/1983/build_utils.py
+
+programs/2732/run_all_lines.sh
