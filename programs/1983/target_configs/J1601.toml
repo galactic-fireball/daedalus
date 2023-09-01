@@ -1,0 +1,32 @@
+target_name = 'J1601'
+
+program_id = 1983
+instrument = 'nirspec_ifu'
+
+redshift = 0.03055706 # SDSS
+
+# For J1601, see https://www.stsci.edu/jwst/phase2-public/1983.pdf
+obs = 1
+
+# actions = ['download_all']
+actions = ['run_pipeline',]
+# actions = ['extract_1D',]
+# actions = ['run_badass',]
+
+# version = 'mast'
+mast_token = '38ab8ed9fc664df799001d94e2a84e13'
+
+pipeline.multiprocess = false
+pipeline.nprocesses = 4
+
+extract.aperture_name = 'aperture_0.4'
+extract.aperture_radius = 0.4 # arcsecs
+# extract.aperture_radius = 'psf'
+
+
+badass.target = 'cube'
+# badass.target = '1D' # or 'cube'
+# badass.line = 'ArVI_4'
+badass.options_file = 'ir_options1.py'
+# badass.options_file = 'region5_options.py'
+# badass.wave_range = 2000
