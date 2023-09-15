@@ -22,18 +22,22 @@ STAGE2_ASN = True # TODO: look for spec2 asn
 
 class NIRSpec_IFU(Instrument):
 
-    def download_all(self):
-        if 'mast_token' in self:
-            mast.login(self.mast_token)
-        df = mast.get_program_data(str(self.program_id), 'NIRSPEC/IFU')
+    def download(self, context, args):
+        if 'mast_token' in args:
+            mast.login(args.mast_token)
+
+        program_id = context.target.program_id
+        output_dir = args.get('output_dir', context.pipeline_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+        df = mast.get_program_data(str(program_id), 'NIRSPEC/IFU')
 
         # uncal
         uncal_df = Observations.filter_products(df, calib_level=[1], productSubGroupDescription='UNCAL').to_pandas()
-        obs_fmt = 'jw%05d%03d' % (self.program_id, self.obs)
+        obs_fmt = 'jw%05d%03d' % (program_id, self.obs)
         obs_df = uncal_df[uncal_df.obs_id.str.contains(obs_fmt)]
 
         for file_name in obs_df.productFilename.values:
-            dest = self.pipeline_dir.joinpath(file_name)
+            dest = output_dir.joinpath(file_name)
             if dest.exists():
                 continue
             print('downloading %s' % file_name)
@@ -41,11 +45,11 @@ class NIRSpec_IFU(Instrument):
 
         # asn2
         asn2_df = Observations.filter_products(df, calib_level=[2], productSubGroupDescription='ASN').to_pandas()
-        obs_fmt = 'jw%05d%03d' % (self.program_id, self.obs)
+        obs_fmt = 'jw%05d%03d' % (program_id, self.obs)
         obs_df = asn2_df[(asn2_df.obs_id.str.contains(obs_fmt)) & (asn2_df.productFilename.str.contains('spec'))]
 
         for file_name in obs_df.productFilename.values:
-            dest = self.pipeline_dir.joinpath(file_name)
+            dest = output_dir.joinpath(file_name)
             if dest.exists():
                 continue
             print('downloading %s' % file_name)
@@ -53,27 +57,15 @@ class NIRSpec_IFU(Instrument):
 
         # asn3
         asn3_df = Observations.filter_products(df, calib_level=[3], productSubGroupDescription='ASN').to_pandas()
-        obs_fmt = 'jw%05d-o%03d' % (self.program_id, self.obs)
+        obs_fmt = 'jw%05d-o%03d' % (program_id, self.obs)
         obs_df = asn3_df[asn3_df.obs_id.str.contains(obs_fmt)]
 
         for file_name in obs_df.productFilename.values:
-            dest = self.pipeline_dir.joinpath(file_name)
+            dest = output_dir.joinpath(file_name)
             if dest.exists():
                 continue
             print('downloading %s' % file_name)
             mast.download_file(file_name, dest=dest)
-
-
-    def run_pipeline(self):
-        # crds_utils.cache_crds('nirspec')
-
-        pipeline_config = getattr(self, 'pipeline', {})
-        pipeline = NIRSpec_IFU_Pipeline(pipeline_config)
-
-        pipeline.run_stage1_all(self.pipeline_dir, self.pipeline_dir)
-        pipeline.run_stage2_all(self.pipeline_dir, self.pipeline_dir)
-        pipeline.run_stage3_all(self.pipeline_dir, self.pipeline_dir)
-        print('Pipeline for {pname} complete!'.format(pname=self.product_name))
 
 
     def get_cubes(self):

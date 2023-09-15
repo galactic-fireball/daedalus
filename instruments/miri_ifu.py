@@ -10,7 +10,7 @@ import sys
 import mast.mast as mast
 import badass.badass_miri as badass_miri
 import badass.miri_consts as miri_consts
-import pipeline.crds_utils as crds_utils
+# import pipeline.crds_utils as crds_utils # TODO: need?
 from instruments.instrument_common import Instrument, Pipeline, Extractor
 
 from jwst.associations import asn_from_list
@@ -90,7 +90,7 @@ class MIRI_IFU(Instrument):
 
 
     def run_pipeline(self):
-        crds_utils.cache_crds('miri')
+        # crds_utils.cache_crds('miri')
         pipeline_config = getattr(self, 'pipeline', {})
         pipeline = MIRI_IFU_Pipeline(pipeline_config)
 

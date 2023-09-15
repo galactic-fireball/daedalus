@@ -12,82 +12,88 @@ from photutils.aperture import CircularAperture, CircularAnnulus, ApertureStats
 from photutils.detection import DAOStarFinder
 
 import numpy as np
-# import nsclean as nc
 
 import ssl
 # Needed to work around ssl certificate verification during crds downloads
 ssl._create_default_https_context = ssl._create_unverified_context
 
-ARGO = False # TODO: add to generic toml
-if pathlib.Path('/projects/ssatyapa/').exists():
-    ARGO = True
-
-if ARGO:
-    CRDS_DIR = pathlib.Path('/projects/ssatyapa/spectra/jwst/crds_cache')
-else:
-    CRDS_DIR = pathlib.Path(__file__).resolve().parent.parent.joinpath('pipeline', 'crds_cache')
-
-USE_CRDS_OPS = True
-# Needs to be set before crds/jwst imports
-if USE_CRDS_OPS:
-    os.environ['CRDS_PATH'] = str(CRDS_DIR.joinpath('ops'))
-    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
-else:
-    os.environ['CRDS_PATH'] = str(CRDS_DIR.joinpath('pub'))
-    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
-
-import crds
-import jwst
-from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
-
 from utils import plotly_plot
 
-# TODO: add to generic toml
-JWST_VERSION_STR = 'pipeline_%s' % jwst.__version__
-# JWST_VERSION_STR = 'mast'
+from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
 
-PROGRAMS_DIR = pathlib.Path(__file__).parent.parent.joinpath('programs')
-INSTRUMENTS_DIR = pathlib.Path(__file__).parent.parent.joinpath('instruments')
+INSTRUMENTS_DIR = pathlib.Path(__file__).parent.joinpath('instruments')
 
-# TODO: way to update a config from the command line
+
+def configure_crds(cache=None, use_ops=True):
+    if use_ops:
+        os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
+        if cache:
+            os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('ops'))
+    else:
+        os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
+        if cache:
+            os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('pub'))
+
+
 class Instrument(Prodict):
-    def from_config(config, instruments):
 
-        for attr in ['target_name', 'program_id', 'instrument', 'actions']:
-            if attr not in config:
-                raise Exception('No \'%s\' in configuration' % attr)
-
-        instrument = config['instrument']
-        if not instrument in instruments:
-            raise Exception('Unknown instrument: %s' % instrument)
-
-        return instruments[instrument](config)
+    def run_pipeline(self, context, args):
+        self.run_stage1_all(context, args)
+        self.run_stage2_all(context, args)
+        self.run_stage3_all(context, args)
+        print('Pipeline for {pname} complete!'.format(pname=self.product_name))
 
 
-    def init(self):
-        if not 'version' in self:
-            self.version = JWST_VERSION_STR
+    def run_stage1_single(self, ufile, output_dir, context, args):
+        print('Processing: {}'.format(str(ufile)))
+        out_file = output_dir.joinpath(ufile.name.replace('uncal', 'rate'))
+        if out_file.exists():
+            # TODO
+            # if CLEAN_RATES:
+            #     self.clean_rate(out_file)
+            return None
 
-        self.product_name = '%s_%s' % (self.target_name, self.version)
-        self.data_dir = PROGRAMS_DIR.joinpath(str(self.program_id), 'data_sets', self.target_name, self.instrument, self.version)
-        self.pipeline_dir = self.data_dir.joinpath('pipeline')
-        self.pipeline_dir.mkdir(parents=True, exist_ok=True)
-        self.pipeline_test_dir = self.pipeline_dir.joinpath('test_plots')
-        self.pipeline_test_dir.mkdir(parents=True, exist_ok=True)
-        self.badass_dir = self.data_dir.joinpath('badass')
-        self.badass_dir.mkdir(parents=True, exist_ok=True)
-        self.inst_data_dir = pathlib.Path(__file__).parent.joinpath('data')
+        detector1 = Detector1Pipeline()
+        detector1.output_dir = str(output_dir)
+        detector1.output_file = str(output_dir.joinpath(ufile.stem))
+
+        step_opts = args.get('stage1', {}).get('steps', {})
+        for step, options in step_opts.items():
+            for opt, val in options.items():
+                setattr(getattr(detector1, step), opt, val)
+
+        detector1.run(ufile)
+
+        # TODO
+        # if CLEAN_RATES:
+        #     self.clean_rate(out_file)
+
+        return None
 
 
-    def run(self):
-        if not all(hasattr(self, action) for action in self.actions):
-            raise Exception('Unknown action in: %s' % self.actions)
+    def run_stage1_all(self, context, args):
+        stage1_opts = args.get('stage1', {})
+        input_dir = stage1_opts.get('input_dir', context.pipeline_dir)
+        output_dir = stage1_opts.get('output_dir', context.pipeline_dir)
+        multiprocess = args.get('multiprocess', False)
+        nprocesses = args.get('nprocesses', 1)
 
-        for action in self.actions:
-            getattr(self, action)()
+        uncal_files = input_dir.glob('*_uncal.fits')
+
+        if not multiprocess:
+            for ufile in uncal_files:
+                self.run_stage1_single(ufile, output_dir, context, args)
+                breakpoint()
+            return
+
+        args = [(ufile, output_dir, context, args) for ufile in uncal_files]
+        pool = mp.Pool(processes=self.nprocesses, maxtasksperchild=1)
+        pool.starmap(self.run_stage1_single, args, chunksize=1)
+        pool.close()
+        pool.join()
 
 
-CLEAN_RATES = True # TODO: add to toml config
+
 class Pipeline(Prodict):
     def init(self):
         for attr in []:
@@ -98,70 +104,7 @@ class Pipeline(Prodict):
         self.nprocesses = getattr(self, 'nprocesses', 4)
 
 
-    def clean_rate(self, rate_file):
-        print('Cleaning rate file: %s' % str(rate_file))
-        detector = rate_file.name.split('_')[-2]
-        mask_file = INSTRUMENTS_DIR.joinpath('data', 'nsclean', '%s_ifu_mask_thorough.fits'%detector) # TODO: fix
-        if not mask_file.exists():
-            raise Exception('Could not find mask file: %s' % str(mask_file))
-
-        hdu = fits.open(mask_file)
-        mask_data = np.array(hdu[0].data, dtype=np.bool_)
-        hdu.close()
-
-        cleaner = nc.NSClean(detector.upper(), mask_data)
-
-        hdu = fits.open(rate_file)
-        rate_file.rename(rate_file.with_suffix(rate_file.suffix+'.orig'))
-
-        hdr = hdu[0].header
-
-        rate_data = np.float32(hdu[1].data)
-        clean_data = cleaner.clean(rate_data, buff=False)
-        hdu[1].data = clean_data
-
-        hdu.writeto(rate_file, overwrite=True)
-        hdu.close()
-
-
-    def run_stage1_single(self, ufile, output_dir):
-        print('Processing: {}'.format(str(ufile)))
-        out_file = output_dir.joinpath(ufile.name.replace('uncal', 'rate'))
-        if out_file.exists():
-            if CLEAN_RATES:
-                self.clean_rate(out_file)
-            return None
-
-        detector1 = Detector1Pipeline()
-        detector1.output_dir = str(output_dir)
-        detector1.output_file = str(output_dir.joinpath(ufile.stem))
-        detector1.run(ufile)
-
-        if CLEAN_RATES:
-            self.clean_rate(out_file)
-
-        # plt.figure()
-        # hdu = fits.open(out_file)
-        # plt.imshow(hdu['SCI'].data)
-        # plt.colorbar()
-        # plt.savefig(output_dir.joinpath('test_plots', out_file.stem + '.png'))
-
-        return None
-
-
-    def run_stage1_all(self, uncal_dir, output_dir):
-        uncal_files = uncal_dir.glob('*_uncal.fits')
-
-        if not self.multiprocess:
-            for ufile in uncal_files:
-                self.run_stage1_single(ufile, output_dir)
-            return
-
-        args = [(ufile, output_dir) for ufile in uncal_files]
-        pool = mp.Pool(processes=self.nprocesses, maxtasksperchild=1)
-        pool.starmap(self.run_stage1_single, args, chunksize=1)
-        pool.close()
-        pool.join()
+    
 
 
 

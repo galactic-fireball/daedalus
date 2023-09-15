@@ -1,31 +1,41 @@
-target_name = 'J1201'
+product_name = 'pipeline_1.11.3'
 
+[target]
+name = 'J1201'
 program_id = 1983
-instrument = 'nirspec_ifu'
-
 redshift = 0.003251394 # SDSS
 
+[instrument]
+name = 'nirspec_ifu'
 # For J1201, see https://www.stsci.edu/jwst/phase2-public/1983.pdf
 obs = 2
 
-# actions = ['download_all']
-actions = ['run_pipeline',]
+# [[action]]
+# name = 'download'
+
+[[action]]
+name = 'pipeline'
+multiprocess = false
+# stage1.steps.saturation.n_pix_grow_sat = 7
+
+
+# actions = ['run_pipeline',]
 # actions = ['extract_1D',]
 # actions = ['run_badass',]
 
 # version = 'mast'
 
-pipeline.multiprocess = false
-pipeline.nprocesses = 4
+# pipeline.multiprocess = false
+# pipeline.nprocesses = 4
 
-extract.aperture_name = 'aperture_0.4'
-extract.aperture_radius = 0.4 # arcsecs
+# extract.aperture_name = 'aperture_0.4'
+# extract.aperture_radius = 0.4 # arcsecs
 # extract.aperture_radius = 'psf'
 
 
-badass.target = 'cube'
+# badass.target = 'cube'
 # badass.target = '1D' # or 'cube'
 # badass.line = 'ArVI_4'
-badass.options_file = 'ir_options1.py'
+# badass.options_file = 'ir_options1.py'
 # badass.options_file = 'region5_options.py'
 # badass.wave_range = 2000

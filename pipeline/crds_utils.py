@@ -7,14 +7,15 @@ import ssl
 # Needed to work around ssl certificate verification during crds downloads
 ssl._create_default_https_context = ssl._create_unverified_context
 
-USE_CRDS_OPS = True
-# Needs to be set before crds/jwst imports
-if USE_CRDS_OPS:
-    os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'ops'))
-    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
-else:
-    os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'pub'))
-    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
+# TODO: use configuration
+# USE_CRDS_OPS = True
+# # Needs to be set before crds/jwst imports
+# if USE_CRDS_OPS:
+#     os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'ops'))
+#     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
+# else:
+#     os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'pub'))
+#     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
 
 import crds
 from crds.client.api import cache_references

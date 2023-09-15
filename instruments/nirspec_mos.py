@@ -4,9 +4,9 @@ import pathlib
 import sys
 
 import mast.mast as mast
-import pipeline.nirspec as nirspec
+# import pipeline.nirspec as nirspec
 # import badass.badass_nirspec as badass_nirspec
-import pipeline.crds_utils as crds_utils
+# import pipeline.crds_utils as crds_utils
 
 class NIRSpec_MOS:
 
@@ -144,41 +144,43 @@ class NIRSpec_MOS:
             mast.download_file(file_name, dest=dl_data_dir.joinpath(file_name))
 
 
+    # TODO: implement
     def run_pipeline(self):
-        crds_utils.cache_crds('nirspec')
+        return
+    #     crds_utils.cache_crds('nirspec')
 
-        # STAGE 1
-        # input_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
-        # output_dir = self.data_dir.joinpath('output', 'stage1', 'sci')
-        # output_dir.mkdir(exist_ok=True, parents=True)
-        input_dir = self.data_dir.joinpath('pipeline_data')
-        output_dir = input_dir
-        nirspec.run_stage1_all(input_dir, output_dir)
+    #     # STAGE 1
+    #     # input_dir = self.data_dir.joinpath('input', 'stage1', 'sci')
+    #     # output_dir = self.data_dir.joinpath('output', 'stage1', 'sci')
+    #     # output_dir.mkdir(exist_ok=True, parents=True)
+    #     input_dir = self.data_dir.joinpath('pipeline_data')
+    #     output_dir = input_dir
+    #     nirspec.run_stage1_all(input_dir, output_dir)
 
-        # STAGE 2
-        # input_dir = self.data_dir.joinpath('input', 'stage2', 'sci')
-        # # Move the stage 1 output to stage 2 input
-        # input_dir.mkdir(exist_ok=True, parents=True)
-        # for f in output_dir.glob('*'):
-        #   f.rename(input_dir.joinpath(f.name))
+    #     # STAGE 2
+    #     # input_dir = self.data_dir.joinpath('input', 'stage2', 'sci')
+    #     # # Move the stage 1 output to stage 2 input
+    #     # input_dir.mkdir(exist_ok=True, parents=True)
+    #     # for f in output_dir.glob('*'):
+    #     #   f.rename(input_dir.joinpath(f.name))
 
-        # output_dir = self.data_dir.joinpath('output', 'stage2', 'sci')
-        # output_dir.mkdir(exist_ok=True, parents=True)
-        nirspec.run_stage2_all(input_dir, output_dir)
+    #     # output_dir = self.data_dir.joinpath('output', 'stage2', 'sci')
+    #     # output_dir.mkdir(exist_ok=True, parents=True)
+    #     nirspec.run_stage2_all(input_dir, output_dir)
 
-        # STAGE 3
-        # input_dir = self.data_dir.joinpath('input', 'stage3', 'sci')
-        # Move the stage 2 output to stage 3 input
-        # input_dir.mkdir(exist_ok=True, parents=True)
-        # for f in output_dir.glob('*'):
-        #     f.rename(input_dir.joinpath(f.name))
+    #     # STAGE 3
+    #     # input_dir = self.data_dir.joinpath('input', 'stage3', 'sci')
+    #     # Move the stage 2 output to stage 3 input
+    #     # input_dir.mkdir(exist_ok=True, parents=True)
+    #     # for f in output_dir.glob('*'):
+    #     #     f.rename(input_dir.joinpath(f.name))
 
-        # output_dir = self.data_dir.joinpath('output', 'stage3', 'sci')
-        # output_dir.mkdir(exist_ok=True, parents=True)
-        nirspec.run_stage3_all(input_dir, output_dir)
+    #     # output_dir = self.data_dir.joinpath('output', 'stage3', 'sci')
+    #     # output_dir.mkdir(exist_ok=True, parents=True)
+    #     nirspec.run_stage3_all(input_dir, output_dir)
 
-        print('Pipeline for {pname} complete!'.format(pname=self.product_name))
-        self.pipeline_out_dir = output_dir
+    #     print('Pipeline for {pname} complete!'.format(pname=self.product_name))
+    #     self.pipeline_out_dir = output_dir
 
 
     def init_for_badass(self):
