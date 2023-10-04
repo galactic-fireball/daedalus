@@ -21,7 +21,7 @@ from utils import plotly_plot
 
 from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
 
-INSTRUMENTS_DIR = pathlib.Path(__file__).parent.joinpath('instruments')
+INSTRUMENTS_DIR = pathlib.Path(__file__).parent
 
 
 def configure_crds(cache=None, use_ops=True):
@@ -41,7 +41,7 @@ class Instrument(Prodict):
         self.run_stage1_all(context, args)
         self.run_stage2_all(context, args)
         self.run_stage3_all(context, args)
-        print('Pipeline for {pname} complete!'.format(pname=self.product_name))
+        print('Pipeline for {pname} complete!'.format(pname=context.config.product_name))
 
 
     def run_stage1_single(self, ufile, output_dir, context, args):
@@ -83,12 +83,11 @@ class Instrument(Prodict):
         if not multiprocess:
             for ufile in uncal_files:
                 self.run_stage1_single(ufile, output_dir, context, args)
-                breakpoint()
             return
 
-        args = [(ufile, output_dir, context, args) for ufile in uncal_files]
+        proc_args = [(ufile, output_dir, context, args) for ufile in uncal_files]
         pool = mp.Pool(processes=self.nprocesses, maxtasksperchild=1)
-        pool.starmap(self.run_stage1_single, args, chunksize=1)
+        pool.starmap(self.run_stage1_single, proc_args, chunksize=1)
         pool.close()
         pool.join()
 

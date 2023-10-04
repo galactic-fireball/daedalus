@@ -6,7 +6,7 @@ import toml
 JWST_UTILS_DIR = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(JWST_UTILS_DIR))
 
-DEFAULT_CONFIG = pathlib.Path('default.toml').resolve()
+DEFAULT_CONFIG = JWST_UTILS_DIR.joinpath('default.toml')
 PROGRAMS_DIR = pathlib.Path(__file__).parent.joinpath('programs')
 
 import instruments.instrument_common as ic

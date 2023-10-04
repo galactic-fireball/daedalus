@@ -24,7 +24,7 @@ class NIRSpec_IFU(Instrument):
 
     def download(self, context, args):
         if 'mast_token' in args:
-            mast.login(args.mast_token)
+            mast.login(args['mast_token'])
 
         program_id = context.target.program_id
         output_dir = args.get('output_dir', context.pipeline_dir)
