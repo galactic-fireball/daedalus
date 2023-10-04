@@ -18,4 +18,7 @@
 * `stage1`: dict containing JWST Pipeline Stage 1 options
 	- `input_dir`: Directory to find JWST Pipeline Stage 1 uncalibrated data. Defaults to pipeline directory.
 	- `output_dir`: Directory to output JWST Pipeline Stage 1 products. Defaults to pipeline directory.
-	- `steps`: dict of JWST Pipeline Stage 1 steps and their corresponding options
+	- `overwrite`: Overwrite existing Stage 1 products. Default: False.
+	- `flag_snowballs`: Run snowball flagging on Stage 1 ramps. Default: False.
+	- `clean_rates`: Run NSClean on Stage 1 rate files. Default: False.
+	- `steps`: dict of JWST Pipeline Stage 1 steps and their corresponding options.
