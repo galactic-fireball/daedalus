@@ -28,6 +28,9 @@ SAT_RADIUS = 3 # Additional saturation radius to cut
 
 PLOT = True
 
+# Only a slightly modified version of Chris Willot's dosnowballflags.py:
+# https://github.com/chriswillott/jwst/blob/master/dosnowballflags.py
+
 def flag_snowballs(ramp_file):
 
     plot_dir = ramp_file.parent.joinpath('snowball_plots')
