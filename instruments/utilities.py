@@ -14,15 +14,18 @@ INSTRUMENTS_DIR = pathlib.Path(__file__).parent
 sys.path.insert(0, str(INSTRUMENTS_DIR))
 import nsclean as nc # TODO: check for failure and mark rate clean unavailable
 
-# TODO: make options
+# TODO: make toml options
+
+# Snowball detection options
 THRESH_SIGMA = 3.0
 BKG = 0.0
 STD_DEV = 0.00007
-
-ECC_THRESH = 0.6
-BOX_RATIO_THRESH = 1.5
-
 NPIX_DET = 50 # The minimum number of connected pixels to detect a snowball
+
+# Thresholds for determining if a snowball candidate is real
+ECC_THRESH = 0.6 # eccentricity
+BOX_RATIO_THRESH = 1.5 # bounding box width/height ratio threshold
+
 HALO_RAD_FACT = 2 # Factor to increase the radius of the snowball to cut
 SAT_RADIUS = 3 # Additional saturation radius to cut
 
@@ -191,7 +194,7 @@ def run_nsclean(rate_file):
     data = hdu['SCI'].data
 
     detector = 'NRS%d' % int(unclean_file.stem.split('nrs')[1][0])
-    mask_file = INSTRUMENTS_DIR.joinpath('data', 'nsclean', '%s_ifu_mask_thorough.fits'%detector)
+    mask_file = INSTRUMENTS_DIR.joinpath('data', 'nsclean', '%s_ifu_mask_thorough.fits'%detector.lower())
     if not mask_file.exists():
         raise Exception('Unable to find NSClean mask file: %s' % str(mask_file))
 
