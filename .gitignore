@@ -130,6 +130,7 @@ dmypy.json
 
 
 sync.sh
+archive/
 pipeline/crds_cache
 programs/*/data_sets/
 programs/*/test_data/
