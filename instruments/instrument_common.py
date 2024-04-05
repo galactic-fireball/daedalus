@@ -17,7 +17,6 @@ import ssl
 # Needed to work around ssl certificate verification during crds downloads
 ssl._create_default_https_context = ssl._create_unverified_context
 
-from utils import plotly_plot
 from instruments.utilities import flag_snowballs, run_nsclean
 
 from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
@@ -125,7 +124,7 @@ class Instrument(Prodict):
             return
 
         proc_args = [(ufile, output_dir, context, args) for ufile in uncal_files]
-        pool = mp.Pool(processes=self.nprocesses, maxtasksperchild=1)
+        pool = mp.Pool(processes=nprocesses, maxtasksperchild=1)
         pool.starmap(self.run_stage1_single, proc_args, chunksize=1)
         pool.close()
         pool.join()
@@ -269,5 +268,5 @@ class Extractor:
             plt.ylabel('Flux (%s)' % TARGET_FLUX_UNIT.to_string())
             plt.savefig(self.outfile.parent.joinpath(self.outfile.stem+'_spec.png'), dpi=300)
 
-            plotly_plot.plot_fits(self.outfile, z=self.redshift)
+            # plotly_plot.plot_fits(self.outfile, z=self.redshift)
 
