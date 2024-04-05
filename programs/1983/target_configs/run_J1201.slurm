@@ -7,15 +7,18 @@
 #SBATCH --output=/scratch/%u/%x-%j.out # user, jobName, jobID
 #SBATCH --error=/scratch/%u/%x-%j.err
 #SBATCH --mail-type=BEGIN,END,FAIL
-#SBATCH --mail-user=sdoan2@gmu.edu
+#SBATCH --mail-user=%u@gmu.edu
 
 #SBATCH --nodes=2
 #SBATCH --ntasks=48
 #SBATCH --mem=30G
 
+# ARGO
+# module load python/3.8.4
+# source /home/%u/python-ve/env/bin/activate
 
-#module load python/3.8.6-ff # HOPPER
-module load python/3.8.4 # ARGO
-source /home/sdoan2/python-ve/env/bin/activate
+module load gnu10/10.3.0-ya
+module load python/3.10.1-qb
+source /home/%u/venv/bin/activate
 
-python ../../run_target.py J1201.toml
+python ../../../run.py J1201.toml
