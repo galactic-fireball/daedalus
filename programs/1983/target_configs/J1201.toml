@@ -1,41 +1,34 @@
-product_name = 'pipeline_1.11.3'
+product_name = 'pipeline_1.14.0'
 
 [target]
 name = 'J1201'
 program_id = 1983
-redshift = 0.003251394 # SDSS
+# redshift = 0.003251394 # SDSS
+redshift = 0.003542211 # from Pa A peak
 
 [instrument]
 name = 'nirspec_ifu'
 # For J1201, see https://www.stsci.edu/jwst/phase2-public/1983.pdf
 obs = 2
 
-# [[action]]
-# name = 'download'
+[[action]]
+name = 'download'
 
 [[action]]
 name = 'pipeline'
 multiprocess = false
-# stage1.steps.saturation.n_pix_grow_sat = 7
+# stage1.flag_snowballs = true
+# stage1.clean_rates = true
+# stage2.steps.cube_build.weighting = 'emsm'
 
+# JWST Pipeline version >= 1.12.0:
+# stage3.steps.cube_build.scalexy = 0.05 # arcsecs
 
-# actions = ['run_pipeline',]
-# actions = ['extract_1D',]
-# actions = ['run_badass',]
+# JWST Pipeline version <= 1.11.4:
+# stage3.steps.cube_build.scale1 = 0.05 # arcsecs
+# stage3.steps.cube_build.scale2 = 0.05 # arcsecs
 
-# version = 'mast'
-
-# pipeline.multiprocess = false
-# pipeline.nprocesses = 4
-
-# extract.aperture_name = 'aperture_0.4'
-# extract.aperture_radius = 0.4 # arcsecs
-# extract.aperture_radius = 'psf'
-
-
-# badass.target = 'cube'
-# badass.target = '1D' # or 'cube'
-# badass.line = 'ArVI_4'
-# badass.options_file = 'ir_options1.py'
-# badass.options_file = 'region5_options.py'
-# badass.wave_range = 2000
+# Example options
+# spec3.outlier_detection.skip = true
+# spec3.extract_1d.center_xy = (29, 26)
+# spec3.outlier_detection.threshold_percent = 90
