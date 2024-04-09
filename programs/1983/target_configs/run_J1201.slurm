@@ -15,7 +15,7 @@
 
 # ARGO
 # module load python/3.8.4
-# source /home/%u/python-ve/env/bin/activate
+# source /home/sdoan2/python-ve/env/bin/activate
 
 module load gnu10/10.3.0-ya
 module load python/3.10.1-qb
