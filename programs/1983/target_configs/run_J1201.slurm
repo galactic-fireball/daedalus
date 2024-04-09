@@ -19,6 +19,6 @@
 
 module load gnu10/10.3.0-ya
 module load python/3.10.1-qb
-source /home/sdoan/venv/bin/activate
+source /home/sdoan2/venv/bin/activate
 
 python ../../../run.py J1201.toml
