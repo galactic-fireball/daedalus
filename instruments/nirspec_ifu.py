@@ -116,10 +116,10 @@ class NIRSpec_IFU(Instrument):
         multiprocess = args.get('multiprocess', False)
         nprocesses = args.get('nprocesses', 1)
 
-        in_files = input_dir.glob('*_spec2_*_asn.json')
-        if len(list(in_files)) == 0:
+        in_files = list(input_dir.glob('*_spec2_*_asn.json'))
+        if len(in_files) == 0:
             print('No stage 2 association files, running directly on rate files')
-            in_files = input_dir.glob('*_rate.fits')
+            in_files = list(input_dir.glob('*_rate.fits'))
 
         if not multiprocess:
             for in_file in in_files:
@@ -160,7 +160,7 @@ class NIRSpec_IFU(Instrument):
         multiprocess = args.get('multiprocess', False)
         nprocesses = args.get('nprocesses', 1)
 
-        asn_files = input_dir.glob('*_spec3_*_asn.json')
+        asn_files = list(input_dir.glob('*_spec3_*_asn.json'))
 
         if not multiprocess:
             for asn_file in asn_files:
