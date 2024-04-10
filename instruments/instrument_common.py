@@ -30,10 +30,12 @@ def configure_crds(cache=None, use_ops=True):
         os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
         if cache:
             os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('ops'))
+            os.environ['CRDS_CONFIG_URI'] = str(pathlib.Path(cache).joinpath('ops', 'config', 'jwst'))
     else:
         os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
         if cache:
             os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('pub'))
+            os.environ['CRDS_CONFIG_URI'] = str(pathlib.Path(cache).joinpath('pub', 'config', 'jwst'))
 
 
 def create_stage1_detector(output_file, step_opts):
