@@ -1,7 +1,12 @@
+import os
 import pathlib
 from prodict import Prodict
 import sys
 import toml
+
+import ssl
+# Needed to work around ssl certificate verification during crds downloads
+ssl._create_default_https_context = ssl._create_unverified_context
 
 JWST_UTILS_DIR = pathlib.Path(__file__).resolve().parent
 sys.path.insert(0, str(JWST_UTILS_DIR))
@@ -9,20 +14,17 @@ sys.path.insert(0, str(JWST_UTILS_DIR))
 DEFAULT_CONFIG = JWST_UTILS_DIR.joinpath('default.toml')
 PROGRAMS_DIR = pathlib.Path(__file__).parent.joinpath('programs')
 
-import instruments.instrument_common as ic
-
-from instruments.miri_ifu import MIRI_IFU
-from instruments.nirspec_ifu import NIRSpec_IFU
-from instruments.nirspec_mos import NIRSpec_MOS
-
-INSTRUMENTS = {
-    'miri': MIRI_IFU,
-    'nirspec_ifu': NIRSpec_IFU,
-    'nirspec_mos': NIRSpec_MOS,
-}
-
-import actions
-ACTIONS = actions.get_actions()
+def configure_crds(cache=None, use_ops=True):
+    if use_ops:
+        os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
+        if cache:
+            os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('ops'))
+            os.environ['CRDS_CONFIG_URI'] = str(pathlib.Path(cache).joinpath('ops', 'config', 'jwst'))
+    else:
+        os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
+        if cache:
+            os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('pub'))
+            os.environ['CRDS_CONFIG_URI'] = str(pathlib.Path(cache).joinpath('pub', 'config', 'jwst'))
 
 
 def get_config():
@@ -42,12 +44,30 @@ def get_config():
     return Prodict.from_dict(config)
 
 
-class RunContext():
-    def __init__(self):
-        self.config = get_config()
+config = get_config()
+if 'CRDS_CACHE' in config or 'USE_CRDS_OPS' in config:
+    configure_crds(cache=config.get('CRDS_CACHE', None), use_ops=config.get('USE_CRDS_OPS', True))
 
-        if 'CRDS_CACHE' in self.config or 'USE_CRDS_OPS' in self.config:
-            ic.configure_crds(cache=self.config.get('CRDS_CACHE', None), use_ops=self.config.get('USE_CRDS_OPS', True))
+
+import instruments.instrument_common as ic
+
+from instruments.miri_ifu import MIRI_IFU
+from instruments.nirspec_ifu import NIRSpec_IFU
+from instruments.nirspec_mos import NIRSpec_MOS
+
+INSTRUMENTS = {
+    'miri': MIRI_IFU,
+    'nirspec_ifu': NIRSpec_IFU,
+    'nirspec_mos': NIRSpec_MOS,
+}
+
+import actions
+ACTIONS = actions.get_actions()
+
+
+class RunContext():
+    def __init__(self, config):
+        self.config = config
 
         self.target = None # TODO: set default variables
         if 'target' in self.config:
@@ -83,7 +103,7 @@ class RunContext():
 
 
 def main():
-    RunContext().run()
+    RunContext(config).run()
 
 if __name__ == '__main__':
     main()

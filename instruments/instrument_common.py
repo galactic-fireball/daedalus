@@ -13,10 +13,6 @@ from photutils.detection import DAOStarFinder
 
 import numpy as np
 
-import ssl
-# Needed to work around ssl certificate verification during crds downloads
-ssl._create_default_https_context = ssl._create_unverified_context
-
 from instruments.utilities import flag_snowballs, run_nsclean
 
 from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
@@ -24,18 +20,6 @@ from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
 INSTRUMENTS_DIR = pathlib.Path(__file__).parent
 
 POST_JUMP_STEPS = ['ramp_fit', 'gain_scale'] # as of 1.12.2
-
-def configure_crds(cache=None, use_ops=True):
-    if use_ops:
-        os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
-        if cache:
-            os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('ops'))
-            os.environ['CRDS_CONFIG_URI'] = str(pathlib.Path(cache).joinpath('ops', 'config', 'jwst'))
-    else:
-        os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
-        if cache:
-            os.environ['CRDS_PATH'] = str(pathlib.Path(cache).joinpath('pub'))
-            os.environ['CRDS_CONFIG_URI'] = str(pathlib.Path(cache).joinpath('pub', 'config', 'jwst'))
 
 
 def create_stage1_detector(output_file, step_opts):
@@ -111,10 +95,10 @@ class Instrument(Prodict):
         return None
 
 
-    def run_stage1_all(self, context, args):
+    def run_stage1_all(self, context, args, indir=None, outdir=None):
         stage1_opts = args.get('stage1', {})
-        input_dir = stage1_opts.get('input_dir', context.pipeline_dir)
-        output_dir = stage1_opts.get('output_dir', context.pipeline_dir)
+        input_dir = stage1_opts.get('input_dir', indir if indir else context.pipeline_dir)
+        output_dir = stage1_opts.get('output_dir', outdir if outdir else context.pipeline_dir)
         multiprocess = args.get('multiprocess', False)
         nprocesses = args.get('nprocesses', 1)
 
