@@ -1,5 +1,6 @@
 from astropy import units as u
 from astropy.io import fits
+import copy
 import multiprocessing as mp
 import numpy as np
 import pandas as pd
@@ -13,40 +14,58 @@ import badass.miri_consts as miri_consts
 # import pipeline.crds_utils as crds_utils # TODO: need?
 from instruments.instrument_common import Instrument, Pipeline, Extractor
 
+from jwst.associations import asn_from_list as afl
+from jwst.associations.lib.rules_level2_base import DMSLevel2bBase
 from jwst.associations import asn_from_list
 from jwst.associations.lib.rules_level3_base import DMS_Level3_Base
 from jwst.associations.lib.rules_level3 import Asn_Lv3SpectralSource
 from jwst.pipeline.calwebb_spec2 import Spec2Pipeline
 from jwst.pipeline.calwebb_spec3 import Spec3Pipeline
 
+
+def get_chband_files(files, ch, band):
+    if (ch == '') or (band == ''):
+        return files
+
+    new_files = []
+    for file in files:
+        hdu = fits.open(file)
+        hdr = hdu[0].header
+        if (hdr['CHANNEL'] == ch) and (hdr['BAND'] == band):
+            new_files.append(file)
+        hdu.close()
+
+    return new_files
+
+
+
 class MIRI_IFU(Instrument):
 
-    def init(self):
-        super().init()
-
-        for attr in ['redshift', 'sci_obs', 'bkgd_obs']:
-            if not hasattr(self, attr) or getattr(self, attr) is None:
-                raise Exception('Program input missing expected value: {attr}'.format(attr=attr))
-
-        self.pipeline_sci_dir = self.pipeline_dir.joinpath('sci')
+    def post_setup(self, context):
+        self.pipeline_sci_dir = context.pipeline_dir.joinpath('sci')
         self.pipeline_sci_dir.mkdir(parents=True, exist_ok=True)
-        self.pipeline_bkgd_dir = self.pipeline_dir.joinpath('bkgd')
+        self.pipeline_bkgd_dir = context.pipeline_dir.joinpath('bkgd')
         self.pipeline_bkgd_dir.mkdir(parents=True, exist_ok=True)
 
 
-    def download_uncal(self):
-        cached_file = self.data_dir.joinpath('miri_{pid}_uncal.csv'.format(pid=self.program_id))
-        if cached_file.exists():
-            df = pd.read_csv(cached_file)
-        else:
-            df = mast.get_data_products(str(self.program_id), 'MIRI/IFU', 1, 'UNCAL').to_pandas()
-            df.to_csv(cached_file, index=False)
+    def download(self, context, args):
+        # cached_file = self.data_dir.joinpath('miri_{pid}_uncal.csv'.format(pid=self.program_id))
+        # if cached_file.exists():
+        #     df = pd.read_csv(cached_file)
+        # else:
+            
+        #     df.to_csv(cached_file, index=False)
+
+        if 'mast_token' in args:
+            mast.login(args['mast_token'])
+
+        df = mast.get_data_products(str(context.target.program_id), 'MIRI/IFU', 1, 'UNCAL').to_pandas()
 
         # Get only IFU data
         df = df[(df.obs_id.str.contains('mirifulong')) | (df.obs_id.str.contains('mirifushort'))]
 
         # Download science files
-        sci_fmt = 'jw%05d%03d' % (self.program_id, self.sci_obs)
+        sci_fmt = 'jw%05d%03d' % (context.target.program_id, self.sci_obs)
         sci_df = df[df.obs_id.str.contains(sci_fmt)]
 
         for file_name in sci_df.productFilename.values:
@@ -57,7 +76,7 @@ class MIRI_IFU(Instrument):
             mast.download_file(file_name, dest=dest)
 
         # Download background files
-        bkgd_fmt = 'jw%05d%03d' % (self.program_id, self.bkgd_obs)
+        bkgd_fmt = 'jw%05d%03d' % (context.target.program_id, self.bkgd_obs)
         bkgd_df = df[df.obs_id.str.contains(bkgd_fmt)]
 
         for file_name in bkgd_df.productFilename.values:
@@ -89,19 +108,249 @@ class MIRI_IFU(Instrument):
             mast.download_file(file_name, dest=self.mast_dir.joinpath(file_name))
 
 
-    def run_pipeline(self):
+    def run_pipeline(self, context, args):
         # crds_utils.cache_crds('miri')
-        pipeline_config = getattr(self, 'pipeline', {})
-        pipeline = MIRI_IFU_Pipeline(pipeline_config)
+        self.run_stage1_all(context, args, indir=self.pipeline_sci_dir, outdir=self.pipeline_sci_dir)
+        self.run_stage1_all(context, args, indir=self.pipeline_bkgd_dir, outdir=self.pipeline_bkgd_dir)
 
-        pipeline.run_stage1_all(self.pipeline_sci_dir, self.pipeline_sci_dir)
-        pipeline.run_stage1_all(self.pipeline_bkgd_dir, self.pipeline_bkgd_dir)
-        pipeline.run_stage2_all(self.pipeline_sci_dir, self.pipeline_sci_dir, skip_cubes=True)
-        pipeline.run_stage2_all(self.pipeline_bkgd_dir, self.pipeline_bkgd_dir, skip_cubes=False)
+        self.run_stage2_all(context, args, self.pipeline_sci_dir, self.pipeline_bkgd_dir, self.pipeline_sci_dir, self.pipeline_bkgd_dir, skip_cubes=True)
 
-        pipeline.run_stage3(self.pipeline_sci_dir, self.pipeline_bkgd_dir, self.product_name, self.pipeline_dir)
+        # self.run_stage2_all(context, args, self.pipeline_sci_dir, self.pipeline_sci_dir, skip_cubes=True)
+        # self.run_stage2_all(context, args, self.pipeline_bkgd_dir, self.pipeline_bkgd_dir, skip_cubes=False)
 
-        print('Pipeline for {pname} complete!'.format(pname=self.product_name))
+        self.run_stage3(context, args, self.pipeline_sci_dir, self.pipeline_bkgd_dir, context.pipeline_dir)
+
+        print('Pipeline for {pname} complete!'.format(pname=context.config.product_name))
+
+
+    def run_stage2_single_orig(self, context, args, rfile, output_dir, skip_cubes):
+        print('Processing: {}'.format(str(rfile)))
+
+        stage_args = args.get('stage2', {})
+        overwrite = stage_args.get('overwrite', False)
+        step_opts = stage_args.get('steps', {})
+
+        if output_dir.joinpath(rfile.name.replace('rate', 'cal')).exists() and not overwrite:
+            return None
+
+        spec2 = Spec2Pipeline()
+        spec2.output_dir = str(output_dir)
+        spec2.output_file = str(rfile.with_suffix(''))
+
+        if (skip_cubes):
+            spec2.cube_build.skip = True
+            spec2.extract_1d.skip = True
+
+        if stage_args.get('fringe_corr', False):
+            spec2.residual_fringe.skip = False
+
+        for step, options in step_opts.items():
+            for opt, val in options.items():
+                setattr(getattr(spec2, step), opt, val)
+
+        spec2.run(rfile)
+        spec2.suffix = 'spec2'
+        return None
+
+
+    def run_stage2_all_orig(self, context, args, input_dir, output_dir, skip_cubes=False):
+        rate_files = input_dir.glob('*_rate.fits')
+        multiprocess = args.get('multiprocess', False)
+        nprocesses = args.get('nprocesses', 1)
+
+        if not multiprocess:
+            for rfile in rate_files:
+                self.run_stage2_single(context, args, rfile, output_dir, skip_cubes)
+            return
+
+        args = [(context, args, rfile, output_dir, skip_cubes) for rfile in rate_files]
+        pool = mp.Pool(processes=nprocesses, maxtasksperchild=1)
+        pool.starmap(self.run_stage2_single, args, chunksize=1)
+        pool.close()
+        pool.join()
+
+
+    def create_stage2_asn(self, context, rfile, bg_files, cal_files):
+        asn = afl.asn_from_list([str(rfile),], rule=DMSLevel2bBase, product_name=context.config.product_name+'_level2')
+
+        hdu = fits.open(rfile)
+        hdr = hdu[0].header
+        ch, band = hdr['CHANNEL'], hdr['BAND']
+        hdu.close()
+
+        for file in bg_files:
+            hdu = fits.open(file)
+            if (hdu[0].header['CHANNEL'] == ch) and (hdu[0].header['BAND'] == band):
+                asn['products'][0]['members'].append({'expname':str(file), 'exptype':'background'})
+            hdu.close()
+
+        for file in cal_files:
+            hdu = fits.open(file)
+            if hdu[0].header['CHANNEL'] == ch:
+                asn['products'][0]['members'].append({'expname':str(file), 'exptype':'selfcal'})
+            hdu.close()
+
+        asn_out = rfile.parent.joinpath('l2asn.json')
+
+        # ac = asn.__class__
+        # breakpoint()
+        # valid = ac.validate(asn)
+        # print(valid)
+
+        _,asn_serialized = asn.dump()
+        asn_file = open(asn_out, 'w')
+        asn_file.write(asn_serialized)
+        asn_file.close()
+        return asn_out
+
+
+    def run_stage2_single(self, context, args, step_dict, rfile, bg_rate_files, cal_files, output_dir):
+        asnfile = str(self.create_stage2_asn(context, rfile, bg_rate_files, cal_files))
+        Spec2Pipeline.call(asnfile, steps=step_dict, save_results=True, output_dir=str(output_dir))
+
+
+    def run_stage2_all(self, context, args, sci_input_dir, bg_input_dir, sci_output_dir, bg_output_dir, skip_cubes=False):
+        sci_rate_files = list(sci_input_dir.glob('*_rate.fits'))
+        bg_rate_files = list(bg_input_dir.glob('*_rate.fits'))
+
+        cal_files = sci_rate_files.copy() + bg_rate_files.copy()
+
+        spec2_steps = [
+            'assign_wcs', 'badpix_selfcal', 'bkg_subtract', 'flat_field', 'srctype', 'straylight',
+            'fringe', 'photom', 'residual_fringe', 'pixel_replace', 'cube_build', 'extract_1d'
+        ]
+        spec2_dict = {s: {} for s in spec2_steps}
+
+        stage_args = args.get('stage2', {})
+        if stage_args.get('pixel_bg', False):
+            spec2_dict['bkg_subtract']['skip'] = False
+        else:
+            spec2_dict['bkg_subtract']['skip'] = True
+
+        spec2_sci_dict = copy.deepcopy(spec2_dict)
+        spec2_sci_dict['cube_build']['skip'] = True
+        spec2_sci_dict['extract_1d']['skip'] = True
+
+        for rfile in sci_rate_files:
+            self.run_stage2_single(context, args, spec2_sci_dict, rfile, bg_rate_files, cal_files, sci_output_dir)
+
+        for rfile in bg_rate_files:
+            self.run_stage2_single(context, args, spec2_dict, rfile, [], cal_files, bg_output_dir)
+
+
+    def create_stage3_asn(self, context, sci_files, bg_files, output_dir):
+        asn = afl.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=context.target.name)#context.config.product_name+'_level3')
+
+        for file in bg_files:
+            asn['products'][0]['members'].append({'expname':file, 'exptype':'background'})
+
+        asn_out = output_dir.joinpath('l3asn.json')
+
+        _,asn_serialized = asn.dump()
+        asn_file = open(asn_out, 'w')
+        asn_file.write(asn_serialized)
+        asn_file.close()
+        return asn_out
+
+
+
+
+
+    def run_stage3(self, context, args, sci_input, bk_input, output_dir):
+        spec3_steps = [
+            'assign_mtwcs', 'master_background', 'outlier_detection', 'mrs_imatch',
+            'cube_build', 'pixel_replace', 'extract_1d', 'spectral_leak'
+        ]
+
+        spec3_dict = {s:{} for s in spec3_steps}
+
+        stage3_opts = args.get('stage3', {})
+
+        if stage3_opts.get('master_bg', True):
+            spec3_dict['master_background']['skip'] = False
+        else:
+            spec3_dict['master_background']['skip'] = True
+
+        spec3_dict['pixel_replace']['skip'] = False
+        spec3_dict['pixel_replace']['algorithm'] = 'mingrad'
+        spec3_dict['cube_build']['output_type'] = 'channel' #'band'
+        spec3_dict['extract_1d']['ifu_autocen'] = True
+
+        sci_cal_files = [str(s) for s in sci_input.glob('*_cal.fits')]
+        bg_x1d_files = [str(s) for s in bk_input.glob('*_x1d.fits')]
+
+        asn_file = self.create_stage3_asn(context, sci_cal_files, bg_x1d_files, output_dir)
+        Spec3Pipeline.call(asn_file, steps=spec3_dict, save_results=True, output_dir=str(output_dir))
+
+
+
+
+    def run_stage3_old(self, context, args, sci_input, bk_input, output_dir):
+        stage3_opts = args.get('stage3', {})
+        include_bkgd = stage3_opts.get('include_bkgd', True)
+        output_dir.mkdir(exist_ok=True, parents=True)
+
+        sci_files = [str(f) for f in sci_input.glob('*_cal.fits')]
+        # jw02521001001_02101_00001_mirifulong_cal.fits
+        asn = asn_from_list.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=context.config.product_name)
+        breakpoint()
+
+        # jw02521003001_02101_00003_mirifushort_x1d.fits
+        if include_bkgd:
+            bk_files = bk_input.glob('*_x1d.fits')
+            for bkfile in bk_files:
+                asn['products'][0]['members'].append({'expname': str(bkfile), 'exptype': 'background'})
+
+        asnfile = output_dir.joinpath('%s_asn.json' % context.config.product_name)
+        with open(asnfile, 'w') as afile:
+            afile.write(asn.dump()[1])
+
+        crds_config = Spec3Pipeline.get_config_from_reference(str(asnfile))
+        spec3 = Spec3Pipeline.from_config_section(crds_config)
+
+        spec3.output_dir = str(output_dir)
+        spec3.save_results = True
+        spec3.run(asnfile)
+
+
+    def run_stage3_old2(self, context, args, sci_input, bk_input, output_dir):
+        stage3_opts = args.get('stage3', {})
+        include_bkgd = stage3_opts.get('include_bkgd', True)
+        output_dir.mkdir(exist_ok=True, parents=True)
+
+        for ch in range(1,5):
+            asn = DMS_Level3_Base()
+            product_name = context.config.product_name+'_ch%d'%ch
+
+            sci_files = [str(f) for f in sci_input.glob('*_%05d_mirifu*_cal.fits'%ch)]
+            items = [(str(f), 'science') for f in sci_input.glob('*_%05d_mirifu*_cal.fits'%ch)]
+            # asn._add_items(sci_files, product_name=product_name)
+
+            if include_bkgd:
+                # bk_files = bk_input.glob('*_%05d_mirifu*_x1d.fits')
+                # for bkfile in bk_files:
+                    # asn['products'][-1]['members'].append({'expname': str(bkfile), 'exptype': 'background'})
+
+                bkitems = [(str(f), 'background') for f in bk_input.glob('*_%05d_mirifu*_x1d.fits'%ch)]
+                items += bkitems
+
+            asn._add_items(items, product_name=product_name, with_exptype=True)
+
+            asnfile = output_dir.joinpath('%s_ch%d_asn.json' % (context.config.product_name,ch))
+            with open(asnfile, 'w') as afile:
+                afile.write(asn.dump()[1])
+
+            crds_config = Spec3Pipeline.get_config_from_reference(str(asnfile))
+            spec3 = Spec3Pipeline.from_config_section(crds_config)
+
+            spec3.output_dir = str(output_dir)
+            spec3.save_results = True
+            # breakpoint()
+            spec3.run(asnfile)
+
+
+
+
 
 
     def get_cubes(self):
@@ -297,62 +546,6 @@ class MIRI_IFU_Pipeline(Pipeline):
         self.residual_fringe_correct = getattr(self, 'residual_fringe_correct', False)
         self.include_bkgd = getattr(self, 'include_bkgd', True)
 
-
-    def run_stage2_single(self, rfile, output_dir, skip_cubes):
-        print('Processing: {}'.format(str(rfile)))
-        if output_dir.joinpath(rfile.name.replace('rate', 'cal')).exists():
-            return None
-
-        spec2 = Spec2Pipeline()
-        spec2.output_dir = str(output_dir)
-        spec2.output_file = str(rfile.with_suffix(''))
-
-        if (skip_cubes):
-            spec2.cube_build.skip = True
-            spec2.extract_1d.skip = True
-
-        if self.residual_fringe_correct:
-            spec2.residual_fringe.skip = False
-
-        spec2.run(rfile)
-        spec2.suffix = 'spec2'
-        return None
-
-
-    def run_stage2_all(self, input_dir, output_dir, skip_cubes=False):
-        rate_files = input_dir.glob('*_rate.fits')
-
-        if not self.multiprocess:
-            for rfile in rate_files:
-                self.run_stage2_single(rfile, output_dir, skip_cubes)
-            return
-
-        args = [(rfile, output_dir, skip_cubes) for rfile in rate_files]
-        pool = mp.Pool(processes=self.nprocesses, maxtasksperchild=1)
-        pool.starmap(self.run_stage2_single, args, chunksize=1)
-        pool.close()
-        pool.join()
-
-
-    def run_stage3(self, sci_input, bk_input, product_name, output_dir):
-        sci_files = [str(f) for f in sci_input.glob('*_cal.fits')]
-        asn = asn_from_list.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=product_name)
-
-        if self.include_bkgd:
-            bk_files = bk_input.glob('*_x1d.fits')
-            for bkfile in bk_files:
-                asn['products'][0]['members'].append({'expname': str(bkfile), 'exptype': 'background'})
-
-        asnfile = output_dir.joinpath('%s_asn.json' % product_name)
-        with open(asnfile, 'w') as afile:
-            afile.write(asn.dump()[1])
-
-        crds_config = Spec3Pipeline.get_config_from_reference(str(asnfile))
-        spec3 = Spec3Pipeline.from_config_section(crds_config)
-
-        spec3.output_dir = str(output_dir)
-        spec3.save_results = True
-        spec3.run(asnfile)
 
 
 class MIRI_IFU_Extractor(Extractor):
