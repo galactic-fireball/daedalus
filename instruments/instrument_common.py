@@ -36,6 +36,10 @@ def create_stage1_detector(output_file, step_opts):
 
 class Instrument(Prodict):
 
+    def post_setup(self, context):
+        pass
+
+
     def run_pipeline(self, context, args):
         self.run_stage1_all(context, args)
         self.run_stage2_all(context, args)
