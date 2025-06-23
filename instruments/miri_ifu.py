@@ -1,24 +1,15 @@
-from astropy import units as u
 from astropy.io import fits
 import copy
 import multiprocessing as mp
-import numpy as np
 import pandas as pd
-import pathlib
-import re
-import sys
 
 import mast.mast as mast
-import badass.badass_miri as badass_miri
-import badass.miri_consts as miri_consts
-# import pipeline.crds_utils as crds_utils # TODO: need?
-from instruments.instrument_common import Instrument, Pipeline, Extractor
+from instruments.instrument_common import Instrument
 
 from jwst.associations import asn_from_list as afl
 from jwst.associations.lib.rules_level2_base import DMSLevel2bBase
 from jwst.associations import asn_from_list
 from jwst.associations.lib.rules_level3_base import DMS_Level3_Base
-from jwst.associations.lib.rules_level3 import Asn_Lv3SpectralSource
 from jwst.pipeline.calwebb_spec2 import Spec2Pipeline
 from jwst.pipeline.calwebb_spec3 import Spec3Pipeline
 

@@ -1,10 +1,7 @@
-import astropy.io.fits as fits
-import astropy.units as u
 from astroquery.mast import Observations
 from datetime import datetime
 import json
 import multiprocessing as mp
-import numpy as np
 
 import mast.mast as mast
 from instruments.instrument_common import Instrument
