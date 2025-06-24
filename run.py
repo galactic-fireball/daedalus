@@ -92,7 +92,6 @@ class RunContext():
 
         # subdirectories: mkdir these in specific actions as needed
         self.pipeline_dir = self.data_dir.joinpath('pipeline')
-        self.badass_dir = self.data_dir.joinpath('badass')
 
         self.instrument.post_setup(self)
 

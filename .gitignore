@@ -130,26 +130,5 @@ dmypy.json
 
 
 sync.sh
-archive/
-pipeline/crds_cache
-programs/*/data_sets/
-programs/*/test_data/
-programs/*/archive/
 instruments/data/webbpsf/webbpsf-data/
 **/.DS_Store
-utils/plotly_plot.py
-
-pipeline/nirspec.py
-pipeline/spec_common.py
-pipeline/docs
-
-programs/high_z.csv
-programs/programs.csv
-
-programs/1328/run_all_lines.sh
-
-programs/1983/analysis/*
-programs/1983/process_test.py
-programs/1983/build_utils.py
-
-programs/2732/run_all_lines.sh
