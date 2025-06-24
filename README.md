@@ -1,4 +1,6 @@
-# jwst-utils
+# Daedalus
+
+A tool for building JWST instrument products from raw uncalibrated data.
 
 ## Actions
 
