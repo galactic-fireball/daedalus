@@ -188,6 +188,9 @@ class MIRI_IFU(Instrument):
         spec2_dict = {s: {} for s in spec2_steps}
 
         stage_args = args.get('stage2', {})
+        if stage_args.get('fringe_corr', False):
+            spec2_dict['residual_fringe']['skip'] = False
+
         if stage_args.get('pixel_bg', False):
             spec2_dict['bkg_subtract']['skip'] = False
         else:
@@ -236,7 +239,11 @@ class MIRI_IFU(Instrument):
 
         spec3_dict['pixel_replace']['skip'] = False
         spec3_dict['pixel_replace']['algorithm'] = 'mingrad'
-        spec3_dict['cube_build']['output_type'] = 'channel' # 'channel', 'band', 'multi'
+        # spec3_dict['cube_build']['output_type'] = 'channel' # 'channel', 'band', 'multi'
+
+        out_type = stage3_opts.get('output_type', 'channel')
+        spec3_dict['cube_build']['output_type'] = out_type
+
         # spec3_dict['cube_build']['list_par1'] = ['1', '1', '1', '2', '2', '2', '3', '3', '3', '4', '4', '4',]
         # spec3_dict['cube_build']['list_par1'] = ['short', 'medium', 'long', 'short', 'medium', 'long', 'short', 'medium', 'long', 'short', 'medium', 'long',]
         spec3_dict['extract_1d']['ifu_autocen'] = True
