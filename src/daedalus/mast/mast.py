@@ -107,6 +107,20 @@ def download_file(file_name, dest=None):
 		pathlib.Path(file_name).rename(dest)
 
 
+
+def mast_test():
+	out_dir = pathlib.Path('mast_test').resolve()
+
+	fmt = 'jw01983-o002_20230826t072655_spec3_%05d_asn.json'
+
+	for i in range(0,100):
+		try:
+			download_file(fmt%i, dest=out_dir.joinpath(fmt%i))
+		except:
+			pass
+
+
+
 def main():
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--download', help='file to download', type=str, default=None)
@@ -118,7 +132,12 @@ def main():
 	parser.add_argument('--product', help='product type', choices=PRODUCTS.keys(), default=None)
 	parser.add_argument('--public', help='get publicly available only', action='store_true', default=False)
 	parser.add_argument('--out', help='output file', type=str, default=None)
+	parser.add_argument('--test', help='run test function', action='store_true', default=False)
 	args = parser.parse_args()
+
+	if args.test:
+		mast_test()
+		return
 
 	if args.download:
 		download_file(args.download)

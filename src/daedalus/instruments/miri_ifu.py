@@ -28,7 +28,7 @@ class MIRI_IFU(Instrument):
         # if cached_file.exists():
         #     df = pd.read_csv(cached_file)
         # else:
-            
+
         #     df.to_csv(cached_file, index=False)
 
         if 'mast_token' in args:

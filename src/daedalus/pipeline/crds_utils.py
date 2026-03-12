@@ -8,14 +8,14 @@ import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
 
 # TODO: use configuration
-# USE_CRDS_OPS = True
+USE_CRDS_OPS = True
 # # Needs to be set before crds/jwst imports
-# if USE_CRDS_OPS:
-#     os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'ops'))
-#     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
-# else:
-#     os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'pub'))
-#     os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
+if USE_CRDS_OPS:
+    os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'ops'))
+    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds.stsci.edu'
+else:
+    os.environ['CRDS_PATH'] = str(pathlib.Path(__file__).resolve().parent.joinpath('crds_cache', 'pub'))
+    os.environ['CRDS_SERVER_URL'] = 'https://jwst-crds-pub.stsci.edu'
 
 import crds
 from crds.client.api import cache_references
@@ -51,6 +51,21 @@ def main():
     cache_crds(args.instrument)
 
 
+def test():
+    # crds.api.set_crds_server('https://jwst-crds.stsci.edu')
+    # breakpoint()
+    ctx = crds.client.api.get_default_context()
+    # crds.api.dump_mappings(ctx)
+    # crds.api.dump_references(ctx)
+    print(crds.config.get_uri('server_config'))
+    info = crds.api.get_server_info()
+    breakpoint()
+
+    print(crds.client.api.get_file_info(ctx, 'server_config'))
+    # breakpoint()
+
+
 if __name__ == '__main__':
-    main()
+    # main()
+    test()
 
