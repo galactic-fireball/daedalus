@@ -1,12 +1,14 @@
 import multiprocessing as mp
 import pathlib
-from prodict import Prodict
+# from prodict import Prodict
 
-from instruments.utilities import flag_snowballs, run_nsclean
+from daedalus.instruments.utilities import flag_snowballs, run_nsclean
 
 from jwst.pipeline.calwebb_detector1 import Detector1Pipeline
 
 INSTRUMENTS_DIR = pathlib.Path(__file__).parent
+
+SUPPORTED_INSTRUMENTS = ['miri', 'nirspec_ifu', 'nirspec_mos']
 
 POST_JUMP_STEPS = ['ramp_fit', 'gain_scale'] # as of 1.12.2
 
@@ -23,7 +25,8 @@ def create_stage1_detector(output_file, step_opts):
     return detector1
 
 
-class Instrument(Prodict):
+# class Instrument(Prodict):
+class Instrument:
 
     def post_setup(self, context):
         pass
