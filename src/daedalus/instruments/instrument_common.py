@@ -1,6 +1,5 @@
 import multiprocessing as mp
 import pathlib
-# from prodict import Prodict
 
 from daedalus.instruments.utilities import flag_snowballs, run_nsclean
 
@@ -13,26 +12,68 @@ SUPPORTED_INSTRUMENTS = ['miri', 'nirspec_ifu', 'nirspec_mos']
 POST_JUMP_STEPS = ['ramp_fit', 'gain_scale'] # as of 1.12.2
 
 
-def create_stage1_detector(output_file, step_opts):
-    detector1 = Detector1Pipeline()
-    detector1.output_dir = str(output_file.parent)
-    detector1.output_file = str(output_file)
-
-    for step, options in step_opts.items():
-        for opt, val in options.items():
-            setattr(getattr(detector1, step), opt, val)
-
-    return detector1
-
-
-# class Instrument(Prodict):
 class Instrument:
 
-    def post_setup(self, context):
-        pass
+    ACTIONS = {
+        'download': 'run_download',
+        'pipeline': 'run_pipeline',
+    }
+
+    def __init__(self, config):
+        self.config = config
+        self.config.output_dir = self.config.output_dir.joinpath(str(self.config.target.program), self.config.target.name, self.config.product_name)
+        self.config.output_dir.mkdir(parents=True, exist_ok=True)
+        print('Output directory: %s'%str(self.config.output_dir))
+        breakpoint()
+
+        if self.config.uncal_dir is None:
+            self.config.uncal_dir = self.config.output_dir.joinpath('uncal')
+        self.config.uncal_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.config.stage2_dir is None:
+            self.config.stage2_dir = self.config.output_dir.joinpath('stage2')
+        self.config.stage2_dir.mkdir(parents=True, exist_ok=True)
+
+        if self.config.stage3_dir is None:
+            self.config.stage3_dir = self.config.output_dir.joinpath('stage3')
+        self.config.stage3_dir.mkdir(parents=True, exist_ok=True)
 
 
-    def run_pipeline(self, context, args):
+    def run_actions(self):
+        res = []
+        for action in self.config.actions:
+            if not action.name in Instrument.ACTIONS:
+                print('Specified action [%s] unsupported'%action.name)
+            print('Running action [%s]'%action.name)
+            res.append(getattr(self, Instrument.ACTIONS[action.name])(action))
+        return res
+
+
+    def run_pipeline(self, opts):
+        print('run_pipeline')
+        self.run_stage1_all(opts)
+        return True
+
+
+    def run_download(self, opts):
+        print('run_download')
+        return True
+
+
+    @staticmethod
+    def create_stage1_detector(output_file, step_opts):
+        detector1 = Detector1Pipeline()
+        detector1.output_dir = str(output_file.parent)
+        detector1.output_file = str(output_file)
+
+        for step, options in step_opts.items():
+            for opt, val in options.items():
+                setattr(getattr(detector1, step), opt, val)
+
+        return detector1
+
+
+    def run_pipeline_old(self, context, args):
         self.run_stage1_all(context, args)
         self.run_stage2_all(context, args)
         self.run_stage3_all(context, args)
@@ -67,17 +108,18 @@ class Instrument:
         detector1.run(sb_file)
 
 
-    def run_stage1_single(self, ufile, output_dir, context, args):
+    def run_stage1_single(self, ufile, opts):
         print('Processing: {}'.format(str(ufile)))
 
-        stage_args = args.get('stage1', {})
-        overwrite = stage_args.get('overwrite', False)
-
-        out_file = output_dir.joinpath(ufile.name.replace('uncal', 'rate'))
-        if out_file.exists() and not overwrite:
+        out_file = self.config.stage2_dir.joinpath(ufile.name.replace('uncal', 'rate'))
+        if out_file.exists() and not opts.overwrite:
             return None
 
-        if stage_args.get('flag_snowballs', False):
+        detector1 = Instrument.create_stage1_detector(self.config.stage2_dir.joinpath(ufile.stem), opts.stage1.steps)
+        detector1.run(ufile)
+        return None
+
+        if opts.stage1.flag_snowballs:
             self.run_stage1_sb_flagging(ufile, output_dir, context, args)
         else:
             step_opts = stage_args.get('steps', {})
@@ -91,22 +133,15 @@ class Instrument:
         return None
 
 
-    def run_stage1_all(self, context, args, indir=None, outdir=None):
-        stage1_opts = args.get('stage1', {})
-        input_dir = stage1_opts.get('input_dir', indir if indir else context.pipeline_dir)
-        output_dir = stage1_opts.get('output_dir', outdir if outdir else context.pipeline_dir)
-        multiprocess = args.get('multiprocess', False)
-        nprocesses = args.get('nprocesses', 1)
-
-        uncal_files = input_dir.glob('*_uncal.fits')
-
-        if not multiprocess:
+    def run_stage1_all(self, opts):
+        uncal_files = self.config.uncal_dir.glob('*_uncal.fits')
+        if not opts.multiprocess:
             for ufile in uncal_files:
-                self.run_stage1_single(ufile, output_dir, context, args)
+                self.run_stage1_single(ufile, opts)
             return
 
-        proc_args = [(ufile, output_dir, context, args) for ufile in uncal_files]
-        pool = mp.Pool(processes=nprocesses, maxtasksperchild=1)
+        proc_args = [(ufile, opts) for ufile in uncal_files]
+        pool = mp.Pool(processes=opts.nprocesses, maxtasksperchild=1)
         pool.starmap(self.run_stage1_single, proc_args, chunksize=1)
         pool.close()
         pool.join()

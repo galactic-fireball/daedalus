@@ -1,1 +1,38 @@
-site_name: My Docs
+site_name: Daedalus Documentation
+repo_name: Daedalus
+repo_url: https://github.com/galactic-fireball/daedalus
+site_url: https://galactic-fireball.github.io/daedalus
+theme:
+  name: material
+  language: en
+  font:
+    text: Merriweather Sans
+    code: Red Hat Mono
+  icon:
+    logo: material/alpha-b-box-outline
+  features:
+    - navigation.footer
+  palette:
+    # dark mode
+    - scheme: slate
+      toggle:
+        icon: material/weather-sunny
+        name: Dark Mode
+      primary: blue
+      accent: purple
+
+    # light mode
+    - scheme: default
+      toggle:
+        icon: material/weather-night
+        name: Light Mode
+      primary: blue
+      accent: purple
+
+nav:
+  - Home: index.md
+  - Installation: documentation/installation.md
+  - Usage:
+    - Configuration: documentation/usage/configuration.md
+    - Configuration Options: documentation/usage/config_options.md
+    - Running: documentation/usage/run.md

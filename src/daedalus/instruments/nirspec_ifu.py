@@ -3,8 +3,8 @@ from datetime import datetime
 import json
 import multiprocessing as mp
 
-import mast.mast as mast
-from instruments.instrument_common import Instrument
+import daedalus.mast.mast as mast
+from daedalus.instruments.instrument_common import Instrument
 
 import jwst
 from jwst.pipeline.calwebb_spec2 import Spec2Pipeline
@@ -13,13 +13,18 @@ from jwst.pipeline.calwebb_spec3 import Spec3Pipeline
 
 class NIRSpec_IFU(Instrument):
 
-    def download(self, context, args):
-        if 'mast_token' in args:
-            mast.login(args['mast_token'])
+    def __init__(self, config):
+        super().__init__(config)
+        self.obs = self.config.target.instrument.obs
 
-        program_id = context.target.program_id
-        output_dir = args.get('output_dir', context.pipeline_dir)
-        output_dir.mkdir(parents=True, exist_ok=True)
+
+    def run_download(self, opts):
+        if not opts.mast_token is None:
+            mast.login(opts.mast_token)
+
+        print('Downloading uncalibrated data to: %s'%str(self.config.uncal_dir))
+        program_id = self.config.target.program
+
         df = mast.get_program_data(str(program_id), 'NIRSPEC/IFU')
 
         # uncal
@@ -28,7 +33,7 @@ class NIRSpec_IFU(Instrument):
         obs_df = uncal_df[uncal_df.obs_id.str.contains(obs_fmt)]
 
         for file_name in obs_df.productFilename.values:
-            dest = output_dir.joinpath(file_name)
+            dest = self.config.uncal_dir.joinpath(file_name)
             if dest.exists():
                 continue
             print('downloading %s' % file_name)
@@ -40,7 +45,7 @@ class NIRSpec_IFU(Instrument):
         obs_df = asn2_df[(asn2_df.obs_id.str.contains(obs_fmt)) & (asn2_df.productFilename.str.contains('spec'))]
 
         for file_name in obs_df.productFilename.values:
-            dest = output_dir.joinpath(file_name)
+            dest = self.config.stage2_dir.joinpath(file_name)
             if dest.exists():
                 continue
             print('downloading %s' % file_name)
@@ -52,7 +57,7 @@ class NIRSpec_IFU(Instrument):
         obs_df = asn3_df[asn3_df.obs_id.str.contains(obs_fmt)]
 
         for file_name in obs_df.productFilename.values:
-            dest = output_dir.joinpath(file_name)
+            dest = self.config.stage3_dir.joinpath(file_name)
             if dest.exists():
                 continue
             print('downloading %s' % file_name)

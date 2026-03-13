@@ -3,8 +3,8 @@ import copy
 import multiprocessing as mp
 import pandas as pd
 
-import mast.mast as mast
-from instruments.instrument_common import Instrument
+import daedalus.mast.mast as mast
+from daedalus.instruments.instrument_common import Instrument
 
 from jwst.associations import asn_from_list as afl
 from jwst.associations.lib.rules_level2_base import DMSLevel2bBase
@@ -15,6 +15,12 @@ from jwst.pipeline.calwebb_spec3 import Spec3Pipeline
 
 
 class MIRI_IFU(Instrument):
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.sci_obs = self.config.target.instrument.sci_obs
+        self.bkgd_obs = self.config.target.instrument.bkgd_obs
+
 
     def post_setup(self, context):
         self.pipeline_sci_dir = context.pipeline_dir.joinpath('sci')
@@ -83,7 +89,7 @@ class MIRI_IFU(Instrument):
             mast.download_file(file_name, dest=self.mast_dir.joinpath(file_name))
 
 
-    def run_pipeline(self, context, args):
+    def run_pipeline_old(self, context, args):
         # crds_utils.cache_crds('miri')
         self.run_stage1_all(context, args, indir=self.pipeline_sci_dir, outdir=self.pipeline_sci_dir)
         self.run_stage1_all(context, args, indir=self.pipeline_bkgd_dir, outdir=self.pipeline_bkgd_dir)
