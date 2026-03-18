@@ -90,7 +90,7 @@
 
 ## `PipelineConfig.stage1`
 *Type:* `PipelineStage1Options`<br/>
-*Default:* `stage=1 steps={} flag_snowballs=False clean_rates=False`<br/>
+*Default:* `stage=1 steps={} skip=False flag_snowballs=True clean_noise=False`<br/>
 *Description:* Options for Stage 1 of the pipeline build.
 
 ## `PipelineConfig.stage1.stage`
@@ -103,19 +103,24 @@
 *Default:* `None [Required Field]`<br/>
 *Description:* Additional options to send to specific steps in this stage.
 
-## `PipelineConfig.stage1.flag_snowballs`
+## `PipelineConfig.stage1.skip`
 *Type:* `bool`<br/>
 *Default:* `False`<br/>
+*Description:* Skip this whole stage
+
+## `PipelineConfig.stage1.flag_snowballs`
+*Type:* `bool`<br/>
+*Default:* `True`<br/>
 *Description:* TODO
 
-## `PipelineConfig.stage1.clean_rates`
+## `PipelineConfig.stage1.clean_noise`
 *Type:* `bool`<br/>
 *Default:* `False`<br/>
 *Description:* TODO
 
 ## `PipelineConfig.stage2`
 *Type:* `PipelineStage2Options`<br/>
-*Default:* `stage=2 steps={}`<br/>
+*Default:* `stage=2 steps={} skip=False cube_build=False`<br/>
 *Description:* Options for Stage 2 of the pipeline build.
 
 ## `PipelineConfig.stage2.stage`
@@ -128,9 +133,19 @@
 *Default:* `None [Required Field]`<br/>
 *Description:* Additional options to send to specific steps in this stage.
 
+## `PipelineConfig.stage2.skip`
+*Type:* `bool`<br/>
+*Default:* `False`<br/>
+*Description:* Skip this whole stage
+
+## `PipelineConfig.stage2.cube_build`
+*Type:* `bool`<br/>
+*Default:* `False`<br/>
+*Description:* TODO
+
 ## `PipelineConfig.stage3`
 *Type:* `PipelineStage3Options`<br/>
-*Default:* `stage=3 steps={} outlier_detection=False`<br/>
+*Default:* `stage=3 steps={} skip=False outlier_detection=False`<br/>
 *Description:* Options for Stage 3 of the pipeline build.
 
 ## `PipelineConfig.stage3.stage`
@@ -142,6 +157,11 @@
 *Type:* `dict`<br/>
 *Default:* `None [Required Field]`<br/>
 *Description:* Additional options to send to specific steps in this stage.
+
+## `PipelineConfig.stage3.skip`
+*Type:* `bool`<br/>
+*Default:* `False`<br/>
+*Description:* Skip this whole stage
 
 ## `PipelineConfig.stage3.outlier_detection`
 *Type:* `bool`<br/>
@@ -166,7 +186,7 @@
 ## `output_dir`
 *Type:* `Path | str`<br/>
 *Default:* `None [Required Field]`<br/>
-*Description:* Daedalus build output directory. Note that the final output directory will be: <output_dir>/<program_id>/<target_name>/<product_name>
+*Description:* Daedalus build output directory. Note that the final output directory will be: `<output_dir>/<program_id>/<target_name>/<instrument_name>/<product_name>/`. Therefore, the `output_dir` passed in the configuration file can be a general Daedalus build directory for all of your targets and build products.
 
 ## `crds_cache`
 *Type:* `Path | str`<br/>

@@ -35,3 +35,21 @@ For NGC 7469, the PDF is found [here](https://www.stsci.edu/jwst-program-info/do
 
 ![Program PDF example](../../assets/pdf_example.jpg)
 
+
+# MAST Tokens
+
+When downloading exclusive access data, Daedalus needs a MAST token from an account with access to the data. Make sure your account is added to the program on MAST, and then create a token:
+
+1. Go to the MAST token [page](https://auth.mast.stsci.edu/tokens) and login.
+2. Click 'Create Token'.
+3. Give your token a name and click 'Create Token'.
+4. Copy the string of hex characters, this is your token.
+
+To use this token in Daedalus, include it under the 'download' action:
+
+```
+[[actions]]
+name = 'download'
+mast_token = '85f578a5aa70439eb3f7385c4cd6a02a'
+```
+

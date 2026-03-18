@@ -69,15 +69,17 @@ class DownloadConfig(ActionConfig):
 class PipelineStageOptions(BaseModel):
     stage: Literal[1,2,3] = 1
     steps: dict = Field(default_factory=dict, description='Additional options to send to specific steps in this stage.')
+    skip: bool = Field(False, description='Skip this whole stage')
 
 
 class PipelineStage1Options(PipelineStageOptions):
-    flag_snowballs: bool = Field(False, description='TODO')
-    clean_rates: bool = Field(False, description='TODO')
+    flag_snowballs: bool = Field(True, description='TODO') # JWST 1.20.2 / CRDS 13.1.10 default
+    clean_noise: bool = Field(False, description='TODO') # JWST 1.20.2 / CRDS 13.1.10 default
 
 
 class PipelineStage2Options(PipelineStageOptions):
     stage: Literal[2] = 2
+    cube_build: bool = Field(False, description='TODO') # 
 
 
 class PipelineStage3Options(PipelineStageOptions):
@@ -101,7 +103,7 @@ class Config(BaseModel):
     uncal_dir: Path = Field(None, description='Directory of uncalibrated data. If one is not provided, Daedalus will create one for you and download the necessary files.')
     stage2_dir: Path = Field(None, description='Directory of data processed by stage 1, ready for stage 2. If one is not provided, Daedalus will create one for you and download or build the necessary files.')
     stage3_dir: Path = Field(None, description='Directory of data processed by stage 2, ready for stage 3. If one is not provided, Daedalus will create one for you and download or build the necessary files.')
-    output_dir: Path = Field(description='Daedalus build output directory. Note that the final output directory will be: <output_dir>/<program_id>/<target_name>/<product_name>')
+    output_dir: Path = Field(description='Daedalus build output directory. Note that the final output directory will be: `<output_dir>/<program_id>/<target_name>/<instrument_name>/<product_name>/`. Therefore, the `output_dir` passed in the configuration file can be a general Daedalus build directory for all of your targets and build products.')
     crds_cache: Path = Field(None, description='CRDS cache directory. Will default to some directory as determined by the CRDS module. Warning! These directories can get up to 10s of GBs.')
     # TODO: save_intermediate
 

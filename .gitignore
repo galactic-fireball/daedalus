@@ -132,3 +132,4 @@ dmypy.json
 sync.sh
 instruments/data/webbpsf/webbpsf-data/
 **/.DS_Store
+testing/
