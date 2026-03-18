@@ -179,6 +179,10 @@ class MIRI_IFU(Instrument):
 
 
     def run_stage2_single(self, infile, opts, bkgd_files, all_files):
+        cal_file = self.config.stage3_dir.joinpath(file_to_file(infile.name, 'cal'))
+        if cal_file.exists() and not opts.overwrite:
+            return
+
         asn_file = str(self.create_stage2_asn(infile, bkgd_files, all_files))
 
         build_args = {
@@ -220,8 +224,8 @@ class MIRI_IFU(Instrument):
 
 
     def run_stage3(self, opts):
-        sci_files = [self.config.stage3_dir.joinpath(exp_to_file(exp,'cal')) for exp in self.sci_exps]
-        bkgd_files = [self.config.stage3_dir.joinpath(exp_to_file(exp,'x1d')) for exp in self.bkgd_exps]
+        sci_files = [str(self.config.stage3_dir.joinpath(exp_to_file(exp,'cal'))) for exp in self.sci_exps]
+        bkgd_files = [str(self.config.stage3_dir.joinpath(exp_to_file(exp,'x1d'))) for exp in self.bkgd_exps]
 
         asn = afl.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=self.config.product_name+'_level3')
 
