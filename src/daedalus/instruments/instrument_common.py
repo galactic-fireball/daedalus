@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+import json
 import multiprocessing as mp
 import pathlib
 
@@ -12,7 +14,7 @@ SUPPORTED_INSTRUMENTS = ['miri', 'nirspec_ifu', 'nirspec_mos']
 POST_JUMP_STEPS = ['ramp_fit', 'gain_scale'] # as of 1.12.2
 
 
-class Instrument:
+class Instrument(ABC):
 
     ACTIONS = {
         'download': 'run_download',
@@ -21,10 +23,16 @@ class Instrument:
 
     def __init__(self, config):
         self.config = config
-        self.config.output_dir = self.config.output_dir.joinpath(str(self.config.target.program), self.config.target.name, self.config.product_name)
+
+        # output_dir = <user_out>/<program_id>/<target_name>/<instrument_name>/<product_name>/
+        self.config.output_dir = self.config.output_dir.joinpath(
+            str(self.config.target.program),
+            self.config.target.name,
+            self.config.target.instrument.name,
+            self.config.product_name
+        )
         self.config.output_dir.mkdir(parents=True, exist_ok=True)
         print('Output directory: %s'%str(self.config.output_dir))
-        breakpoint()
 
         if self.config.uncal_dir is None:
             self.config.uncal_dir = self.config.output_dir.joinpath('uncal')
@@ -51,61 +59,22 @@ class Instrument:
 
     def run_pipeline(self, opts):
         print('run_pipeline')
-        self.run_stage1_all(opts)
+
+        if not opts.stage1.skip:
+            self.run_stage1(opts)
+
+        if not opts.stage2.skip:
+            self.run_stage2(opts)
+
+        if not opts.stage3.skip:
+            self.run_stage3(opts)
+
         return True
 
 
+    @abstractmethod
     def run_download(self, opts):
-        print('run_download')
-        return True
-
-
-    @staticmethod
-    def create_stage1_detector(output_file, step_opts):
-        detector1 = Detector1Pipeline()
-        detector1.output_dir = str(output_file.parent)
-        detector1.output_file = str(output_file)
-
-        for step, options in step_opts.items():
-            for opt, val in options.items():
-                setattr(getattr(detector1, step), opt, val)
-
-        return detector1
-
-
-    def run_pipeline_old(self, context, args):
-        self.run_stage1_all(context, args)
-        self.run_stage2_all(context, args)
-        self.run_stage3_all(context, args)
-        print('Pipeline for {pname} complete!'.format(pname=context.config.product_name))
-
-
-    def run_stage1_sb_flagging(self, ufile, output_dir, context, args):
-        stage_args = args.get('stage1', {})
-        step_opts = stage_args.get('steps', {})
-
-        detector1 = create_stage1_detector(output_dir.joinpath(ufile.stem), step_opts)
-        detector1.save_calibrated_ramp = True
-
-        # First run everything up to and including 'jump' step
-        for name in detector1.step_defs.keys():
-            if name in POST_JUMP_STEPS:
-                getattr(detector1, name).skip = True
-        detector1.run(ufile)
-
-        ramp_file = output_dir.joinpath(ufile.name.replace('uncal', 'ramp'))
-        if not ramp_file.exists():
-            raise Exception('Failed to create ramp file: %s' % str(ramp_file))
-
-        print('Flagging snowballs')
-        sb_file = flag_snowballs(ramp_file)
-
-        # Then run everything after 'jump' step with the snowball flagged ramp file
-        detector1 = create_stage1_detector(output_dir.joinpath(ufile.stem), step_opts)
-        for name in detector1.step_defs.keys():
-            if not name in POST_JUMP_STEPS:
-                getattr(detector1, name).skip = True
-        detector1.run(sb_file)
+        pass
 
 
     def run_stage1_single(self, ufile, opts):
@@ -113,27 +82,37 @@ class Instrument:
 
         out_file = self.config.stage2_dir.joinpath(ufile.name.replace('uncal', 'rate'))
         if out_file.exists() and not opts.overwrite:
-            return None
+            return
 
-        detector1 = Instrument.create_stage1_detector(self.config.stage2_dir.joinpath(ufile.stem), opts.stage1.steps)
-        detector1.run(ufile)
-        return None
+        build_args = {
+            'output_dir': str(out_file.parent),
+            'output_file': str(out_file),
+            'steps': opts.stage1.steps,
+        }
 
+        config, _ = Detector1Pipeline.build_config(ufile, **build_args)
+        print('Running Detector 1 Pipeline with config: \n'+json.dumps(config.dict(), indent=4))
+        Detector1Pipeline.call(ufile, **build_args)
+
+
+    def run_stage1(self, opts):
+
+        # TODO: move all option parsing up to Instrument.__init__
         if opts.stage1.flag_snowballs:
-            self.run_stage1_sb_flagging(ufile, output_dir, context, args)
-        else:
-            step_opts = stage_args.get('steps', {})
-            detector1 = create_stage1_detector(output_dir.joinpath(ufile.stem), step_opts)
-            detector1.run(ufile)
+            if not 'jump' in opts.stage1.steps:
+                opts.stage1.steps['jump'] = {}
+            if self.config.target.instrument in ['nirspec_ifu', 'nirspec_mos',]:
+                # As of JWST 1.20.2 / CRDS 13.1.10, this is on by default for NIR observations, but make it explicit
+                opts.stage1.steps['jump']['expand_large_events'] = True
+            elif self.config.target.instrument in ['miri']:
+                opts.stage1.steps['jump']['find_showers'] = True
 
-        if stage_args.get('clean_rates', False):
-            print('Running NSClean on %s' % str(out_file))
-            run_nsclean(out_file)
+        # As of JWST 1.20.2 / CRDS 13.1.10, this step is skipped by default, turn on here
+        if opts.stage1.clean_noise:
+            if not 'clean_flicker_noise' in opts.stage1.steps:
+                opts.stage1.steps['clean_flicker_noise'] = {}
+            opts.stage1.steps['clean_flicker_noise']['skip'] = False
 
-        return None
-
-
-    def run_stage1_all(self, opts):
         uncal_files = self.config.uncal_dir.glob('*_uncal.fits')
         if not opts.multiprocess:
             for ufile in uncal_files:
@@ -145,3 +124,15 @@ class Instrument:
         pool.starmap(self.run_stage1_single, proc_args, chunksize=1)
         pool.close()
         pool.join()
+
+
+    @abstractmethod
+    def run_stage2(self, opts):
+        pass
+
+
+    @abstractmethod
+    def run_stage3(self, opts):
+        pass
+
+

@@ -187,6 +187,7 @@ def flag_snowballs(ramp_file):
 
 
 def run_nsclean(rate_file):
+    raise Exception('This method is now deprecated, as 1/f noise correction is now implemented in the official JWST data reduction pipeline. See \'clean_flicker_noise\' step.')
     unclean_file = rate_file.parent.joinpath(rate_file.stem + '_unclean.fits')
     rate_file.rename(unclean_file)
 

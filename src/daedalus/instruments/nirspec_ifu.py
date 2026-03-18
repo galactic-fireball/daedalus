@@ -1,5 +1,5 @@
 from astroquery.mast import Observations
-from datetime import datetime
+from datetime import datetime, UTC
 import json
 import multiprocessing as mp
 
@@ -65,112 +65,100 @@ class NIRSpec_IFU(Instrument):
 
 
     def update_asn(self, asn_temp):
-        data = json.load(open(asn_temp))
+        with open(asn_temp) as f:
+            data = json.load(f)
 
         name = data['products'][0]['name']
         data['code_version'] = jwst.__version__
-        data['version_id'] = datetime.utcnow().strftime('%Y%m%dt%H%M%S')
+        data['version_id'] = datetime.now(UTC).strftime('%Y%m%dt%H%M%S')
         # data['asn_pool'] = ''
 
         asn_file = asn_temp.parent.joinpath('%s_updated.json' % asn_temp.stem)
-        json.dump(data, open(asn_file, 'w'))
+        with open(asn_file, 'w') as f:
+            json.dump(data, f)
 
         return asn_file, name
 
-    def run_stage2_single(self, infile, output_dir, context, args):
+    def run_stage2_single(self, infile, opts):
         print('Processing: {}'.format(str(infile)))
 
-        stage_args = args.get('stage2', {})
-        overwrite = stage_args.get('overwrite', False)
-        step_opts = stage_args.get('steps', {})
+        build_args = {
+            'output_dir': str(self.config.stage3_dir),
+            'save_results': True,
+            'steps': opts.stage2.steps,
+        }
 
         asn_in = infile.stem.split('_')[-1] == 'asn'
-
         if asn_in:
-            asn_file, name = self.update_asn(infile)
-            out_file = output_dir.joinpath('%s_cal.fits'%name)
-            if out_file.exists() and not overwrite:
+            infile, name = self.update_asn(infile)
+            out_file = self.config.stage3_dir.joinpath('%s_cal.fits'%name)
+            if out_file.exists() and not opts.overwrite:
                 return None
         else:
-            if output_dir.joinpath(infile.name.replace('rate', 'cal')).exists() and not overwrite:
+            if self.config.stage3_dir.joinpath(infile.name.replace('rate', 'cal')).exists() and not opts.overwrite:
                 return None
 
-        spec2 = Spec2Pipeline()
-        spec2.output_dir = str(output_dir)
-        for step, options in step_opts.items():
-            for opt, val in options.items():
-                setattr(getattr(spec2, step), opt, val)
 
-        if asn_in:
-            spec2.save_results = True
-            result = spec2(str(asn_file))
-        else: # Run stage 2 directly on rate files
-            spec2.output_file = str(infile.with_suffix(''))
-            spec2.run(infile)
-            spec2.suffix = 'spec2'
-        return None
+        config, _ = Spec2Pipeline.build_config(infile, **build_args)
+        print('Running Spec 2 Pipeline with config: \n'+json.dumps(config.dict(), indent=4))
+        Spec2Pipeline.call(infile, **build_args)
 
 
-    def run_stage2_all(self, context, args):
-        stage2_opts = args.get('stage2', {})
-        input_dir = stage2_opts.get('input_dir', context.pipeline_dir)
-        output_dir = stage2_opts.get('output_dir', context.pipeline_dir)
-        multiprocess = args.get('multiprocess', False)
-        nprocesses = args.get('nprocesses', 1)
+    def run_stage2(self, opts):
 
+        # TODO: move all option parsing up to Instrument.__init__
+        # As of JWST 1.20.2 / CRDS 13.1.10, this step is skipped by default, turn on here
+        if opts.stage1.clean_noise: # clean_noise option is set in stage 1
+            # This step is still called 'nsclean' as of JWST 1.20.2, but a change seems to be coming...
+            if not 'nsclean' in opts.stage2.steps: opts.stage2.steps['nsclean'] = {}
+            opts.stage2.steps['nsclean']['skip'] = False
+
+            # if not 'clean_flicker_noise' in opts.stage2.steps: opts.stage2.steps['clean_flicker_noise'] = {}
+            # opts.stage2.steps['clean_flicker_noise']['skip'] = False
+
+        input_dir = self.config.stage2_dir
         in_files = list(input_dir.glob('*_spec2_*_asn.json'))
         if len(in_files) == 0:
             print('No stage 2 association files, running directly on rate files')
             in_files = list(input_dir.glob('*_rate.fits'))
 
-        if not multiprocess:
+        if not opts.multiprocess:
             for in_file in in_files:
-                self.run_stage2_single(in_file, output_dir, context, args)
+                self.run_stage2_single(in_file, opts)
             return
 
-        proc_args = [(in_file, output_dir, context, args) for in_file in in_files]
-        pool = mp.Pool(processes=nprocesses, maxtasksperchild=1)
+        proc_args = [(in_file, opts) for in_file in in_files]
+        pool = mp.Pool(processes=opts.nprocesses, maxtasksperchild=1)
         pool.starmap(self.run_stage2_single, proc_args, chunksize=1)
         pool.close()
         pool.join()
 
 
-    def run_stage3_single(self, asn_temp, out_dir, context, args):
+    def run_stage3_single(self, asn_temp, opts):
         print('Processing: {}'.format(str(asn_temp)))
-        stage_args = args.get('stage3', {})
-        step_opts = stage_args.get('steps', {})
 
         asn_file, name = self.update_asn(asn_temp)
-        crds_config = Spec3Pipeline.get_config_from_reference(str(asn_file))
 
-        spec3 = Spec3Pipeline.from_config_section(crds_config)
-        spec3.output_dir = str(out_dir)
-        spec3.save_results = True
+        build_args = {
+            'output_dir': str(self.config.output_dir),
+            'save_results': True,
+            'steps': opts.stage3.steps,
+        }
 
-        for step, options in step_opts.items():
-            for opt, val in options.items():
-                setattr(getattr(spec3, step), opt, val)
-
-        spec3.run(asn_file)
-        return None
+        config, _ = Spec3Pipeline.build_config(asn_file, **build_args)
+        print('Running Spec 3 Pipeline with config: \n'+json.dumps(config.dict(), indent=4))
+        Spec3Pipeline.call(asn_file, **build_args)
 
 
-    def run_stage3_all(self, context, args):
-        stage3_opts = args.get('stage3', {})
-        input_dir = stage3_opts.get('input_dir', context.pipeline_dir)
-        output_dir = stage3_opts.get('output_dir', context.pipeline_dir)
-        multiprocess = args.get('multiprocess', False)
-        nprocesses = args.get('nprocesses', 1)
-
-        asn_files = list(input_dir.glob('*_spec3_*_asn.json'))
-
-        if not multiprocess:
+    def run_stage3(self, opts):
+        asn_files = list(self.config.stage3_dir.glob('*_spec3_*_asn.json'))
+        if not opts.multiprocess:
             for asn_file in asn_files:
-                self.run_stage3_single(asn_file, output_dir, context, args)
+                self.run_stage3_single(asn_file, opts)
             return
 
-        proc_args = [(asn_file, output_dir, context, args) for asn_file in asn_files]
-        pool = mp.Pool(processes=nprocesses, maxtasksperchild=1)
+        proc_args = [(asn_file, opts) for asn_file in asn_files]
+        pool = mp.Pool(processes=opts.nprocesses, maxtasksperchild=1)
         pool.starmap(self.run_stage3_single, proc_args, chunksize=1)
         pool.close()
         pool.join()
