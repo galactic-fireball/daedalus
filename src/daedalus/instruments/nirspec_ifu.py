@@ -105,16 +105,7 @@ class NIRSpec_IFU(Instrument):
 
 
     def run_stage2(self, opts):
-
-        # TODO: move all option parsing up to Instrument.__init__
-        # As of JWST 1.20.2 / CRDS 13.1.10, this step is skipped by default, turn on here
-        if opts.stage1.clean_noise: # clean_noise option is set in stage 1
-            # This step is still called 'nsclean' as of JWST 1.20.2, but a change seems to be coming...
-            if not 'nsclean' in opts.stage2.steps: opts.stage2.steps['nsclean'] = {}
-            opts.stage2.steps['nsclean']['skip'] = False
-
-            # if not 'clean_flicker_noise' in opts.stage2.steps: opts.stage2.steps['clean_flicker_noise'] = {}
-            # opts.stage2.steps['clean_flicker_noise']['skip'] = False
+        Instrument.add_stage2_common_opts(opts)
 
         input_dir = self.config.stage2_dir
         in_files = list(input_dir.glob('*_spec2_*_asn.json'))
@@ -151,6 +142,8 @@ class NIRSpec_IFU(Instrument):
 
 
     def run_stage3(self, opts):
+        Instrument.add_stage3_common_opts(opts)
+
         asn_files = list(self.config.stage3_dir.glob('*_spec3_*_asn.json'))
         if not opts.multiprocess:
             for asn_file in asn_files:

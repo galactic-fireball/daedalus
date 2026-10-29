@@ -126,6 +126,33 @@ class Instrument(ABC):
         pool.join()
 
 
+    @classmethod
+    def add_stage2_common_opts(cls, opts):
+        # As of JWST 2.0.0 / CRDS 13.1.16, this step is skipped by default, turn on here
+        if opts.stage2.clean_noise:
+            if not 'clean_flicker_noise' in opts.stage2.steps:
+                opts.stage2.steps['clean_flicker_noise'] = {}
+            opts.stage2.steps['clean_flicker_noise']['skip'] = False
+
+        if opts.stage2.atm:
+            if not 'adaptive_trace_model' in opts.stage2.steps:
+                opts.stage2.steps['adaptive_trace_model'] = {}
+            opts.stage2.steps['adaptive_trace_model']['skip'] = False
+
+
+    @classmethod
+    def add_stage3_common_opts(cls, opts):
+        if opts.stage3.atm:
+            if not 'adaptive_trace_model' in opts.stage3.steps:
+                opts.stage3.steps['adaptive_trace_model'] = {}
+            opts.stage3.steps['adaptive_trace_model']['skip'] = False
+
+        if opts.stage3.cube_scale > 0:
+            if not 'cube_build' in opts.stage3.steps:
+                opts.stage3.steps['cube_build'] = {}
+            opts.stage3.steps['cube_build']['scalexy'] = opts.stage3.cube_scale
+
+
     @abstractmethod
     def run_stage2(self, opts):
         pass

@@ -8,6 +8,7 @@ from typing import NamedTuple
 
 import daedalus.mast.mast as mast
 from daedalus.instruments.instrument_common import Instrument
+# from daedalus.instruments.rfcorr import rfcorr_post_process
 
 from jwst.associations import asn_from_list as afl
 from jwst.associations.lib.rules_level2_base import DMSLevel2bBase
@@ -76,6 +77,11 @@ class MIRI_IFU(Instrument):
 
         self.sci_exps = exp_lists['sci']
         self.bkgd_exps = exp_lists['bkgd']
+
+
+    def run_pipeline(self, opts):
+        self.fill_exp_lists()
+        super().run_pipeline(opts)
 
 
     def run_download(self, opts):
@@ -188,7 +194,7 @@ class MIRI_IFU(Instrument):
         build_args = {
             'output_dir': str(self.config.stage3_dir),
             'save_results': True,
-            'steps': opts.stage3.steps,
+            'steps': opts.stage2.steps,
         }
 
         config, _ = Spec2Pipeline.build_config(asn_file, **build_args)
@@ -202,6 +208,13 @@ class MIRI_IFU(Instrument):
 
         all_rate_files = sci_rate_files + bkgd_rate_files
         self.init_ch_band_dict(all_rate_files)
+
+        Instrument.add_stage2_common_opts(opts)
+
+        if opts.stage2.rf_corr:
+            if not 'residual_fringe' in opts.stage2.steps:
+                opts.stage2.steps['residual_fringe'] = {}
+            opts.stage2.steps['residual_fringe']['skip'] = False
 
         if not opts.multiprocess:
             for rfile in sci_rate_files:
@@ -224,10 +237,12 @@ class MIRI_IFU(Instrument):
 
 
     def run_stage3(self, opts):
+        Instrument.add_stage3_common_opts(opts)
+
         sci_files = [str(self.config.stage3_dir.joinpath(exp_to_file(exp,'cal'))) for exp in self.sci_exps]
         bkgd_files = [str(self.config.stage3_dir.joinpath(exp_to_file(exp,'x1d'))) for exp in self.bkgd_exps]
 
-        asn = afl.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=self.config.product_name+'_level3')
+        asn = afl.asn_from_list(sci_files, rule=DMS_Level3_Base, product_name=self.config.product_name.replace('_','-').replace('.','-')+'-level3')
 
         for file in bkgd_files:
             asn['products'][0]['members'].append({'expname':str(file), 'exptype':'background'})
@@ -247,4 +262,10 @@ class MIRI_IFU(Instrument):
         config, _ = Spec3Pipeline.build_config(asn_file, **build_args)
         print('Running Spec 3 Pipeline with config: \n'+json.dumps(config.dict(), indent=4))
         Spec3Pipeline.call(asn_file, **build_args)
+
+
+        # if opts.stage3.rf_corr:
+        #     print('Running 1D RFC post processing')
+        #     rfcorr_post_process(self)
+
 
