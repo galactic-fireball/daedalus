@@ -73,18 +73,22 @@ class PipelineStageOptions(BaseModel):
 
 
 class PipelineStage1Options(PipelineStageOptions):
-    flag_snowballs: bool = Field(True, description='TODO') # JWST 1.20.2 / CRDS 13.1.10 default
-    clean_noise: bool = Field(False, description='TODO') # JWST 1.20.2 / CRDS 13.1.10 default
+    flag_snowballs: bool = Field(True, description='TODO')
+    clean_noise: bool = Field(False, description='TODO') # NIRSpec only
 
 
 class PipelineStage2Options(PipelineStageOptions):
     stage: Literal[2] = 2
-    cube_build: bool = Field(False, description='TODO') # 
+    # cube_build: bool = Field(False, description='TODO')
+    clean_noise: bool = Field(False, description='TODO') # NIRSpec only
+    rf_corr: bool = Field(False, description='TODO') # MIRI only
+    atm: bool = Field(False, description='adaptive trace model')
 
 
 class PipelineStage3Options(PipelineStageOptions):
     stage: Literal[3] = 3
-    outlier_detection: bool = Field(False, description='TODO')
+    atm: bool = Field(False, description='adaptive trace model')
+    cube_scale: float = Field(-1, description='Pixel scale of final cube, in arcseconds. Default is 1\"')
 
 
 class PipelineConfig(ActionConfig):
