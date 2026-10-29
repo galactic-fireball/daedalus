@@ -8,8 +8,8 @@ README
 
 Compatible with:
 
-- JWST pipeline version 1.20.2
-- CRDS version 13.1.10
+- JWST pipeline version up to 3.0.0
+- CRDS version up to 13.2.1
 
 
 ## Credits
