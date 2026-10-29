@@ -5,7 +5,15 @@ import sys
 import toml
 
 SC_URL = 'https://jwst-crds.stsci.edu/unchecked_get/config/jwst/server_config'
+PMAP_URL = 'https://jwst-crds.stsci.edu/unchecked_get/mappings/jwst/%s'
 REPO_DIR = pathlib.Path(__file__).resolve().parent.parent.parent
+
+
+instrument_map = {
+    'nirspec_ifu': 'nirspec',
+    'nirspec_mos': 'nirspec',
+}
+
 
 def run(config):
     instrument = config.target.instrument.create_instrument(config)
@@ -54,8 +62,49 @@ def main():
                 print('Unable to download server_config. Exiting...')
                 return
 
+            sc_file.parent.mkdir(parents=True, exist_ok=True)
             with open(sc_file, 'wb') as scf:
                 scf.write(res.content)
+
+        import crds
+        pmap = crds.get_default_context('jwst')
+        ctx_map_file = crds_cache.joinpath('ops', 'mappings', 'jwst', pmap)
+        if not ctx_map_file.exists():
+            url = PMAP_URL%pmap
+            res = requests.get(url)
+            if not res.ok:
+                print('Unable to download pmap file: %s. Exiting...'%pmap)
+                return
+
+            ctx_map_file.parent.mkdir(parents=True, exist_ok=True)
+            with open(ctx_map_file, 'wb') as cmf:
+                cmf.write(res.content)
+
+        # FileNotFoundError: [Errno 2] No such file or directory: '/projects/ssatyapa/spectra/jwst/crds_cache/ops/mappings/jwst/jwst_miri_0517.imap'
+
+        # make sure we have all the instrument references mapped
+        # instrument = toml_config.get('target', {}).get('instrument', {}).get('name', None)
+        # if instrument is None:
+        #     print('Need instrument! Exiting...')
+        #     return
+
+        # instrument = instrument_map.get(instrument, instrument)
+        # mappings = crds.api.get_mapping_names(pmap)
+        # imaps = [m for m in mappings if '.imap' in m]
+        # target_maps = [m for m in imaps if instrument in m]
+
+        # for mfile in mappings:
+        #     local_file = crds_cache.joinpath('ops', 'mappings', 'jwst', mfile)
+        #     if local_file.exists():
+        #         continue
+
+        #     url = PMAP_URL%mfile
+        #     res = requests.get(url)
+        #     if not res.ok:
+        #         print('Unable to download imap file: %s. Exiting...'%mfile)
+
+        #     with open(local_file, 'wb') as lmf:
+        #         lmf.write(res.content)
 
 
     from daedalus.models import Config
