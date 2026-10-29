@@ -36,3 +36,4 @@ nav:
     - Configuration: documentation/usage/configuration.md
     - Configuration Options: documentation/usage/config_options.md
     - Running: documentation/usage/run.md
+    - Common Stage Options: documentation/usage/common_stage_opts.md
